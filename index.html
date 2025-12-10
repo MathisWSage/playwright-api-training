@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright API Testing Training</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #00AA44;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .sage-logo {
+            width: 100px;
+            height: 40px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .sage-s {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .avatar-section {
+            background: #f8f9fa;
+            padding: 40px;
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-right: 2px solid #e9ecef;
+        }
+
+        .avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: #00AA44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 170, 68, 0.2);
+            position: relative;
+        }
+
+
+
+        .avatar-icon {
+            width: 100px;
+            height: 100px;
+            fill: white;
+        }
+
+        .speech-bubble {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            position: relative;
+            margin-top: 20px;
+            max-width: 280px;
+            border-left: 4px solid #00AA44;
+        }
+
+
+
+
+
+        .speech-bubble p {
+            color: #333;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .slide-section {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .slide {
+            display: none;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+
+
+        .slide h2 {
+            color: #00AA44;
+            font-size: 2em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #00AA44;
+            padding-bottom: 10px;
+        }
+
+        .slide h3 {
+            color: #00AA44;
+            font-size: 1.5em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .slide p {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            font-size: 1.05em;
+        }
+
+        .slide ul, .slide ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        .slide li {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            white-space: pre;
+        }
+
+        .code-block .keyword { color: #ff79c6; }
+        .code-block .string { color: #50fa7b; }
+        .code-block .comment { color: #6272a4; font-style: italic; }
+        .code-block .function { color: #8be9fd; }
+        .code-block .class { color: #f1fa8c; }
+        .code-block .number { color: #bd93f9; }
+        .code-block .property { color: #50fa7b; }
+        .code-block .operator { color: #ff79c6; }
+        .code-block .type { color: #8be9fd; }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 2px solid #e9ecef;
+            gap: 30px;
+        }
+
+        .controls .slide-counter {
+            margin-right: 20px;
+        }
+
+        .btn {
+            background: #00AA44;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 170, 68, 0.2);
+        }
+
+        .btn:hover {
+            background-color: #009933;
+            box-shadow: 0 4px 12px rgba(0, 170, 68, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            flex: 1;
+            margin: 0 30px;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #00AA44;
+            transition: width 0.3s ease;
+        }
+
+        .slide-counter {
+            color: #00AA44;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .architecture-diagram {
+            background: #f8f9fa;
+            border: 1px solid #00AA44;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .layer {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .question {
+            background: #f8f9fa;
+            border-left: 4px solid #00AA44;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .question p {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .question label {
+            display: block;
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .question label:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .question label input {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .question.correct {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+
+        .question.incorrect {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .result-box {
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .result-box.pass {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .result-box.fail {
+            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+            color: white;
+        }
+
+        .result-box h3 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+
+        .result-box p {
+            font-size: 1.3em;
+            color: white;
+        }
+
+        .review-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .review-item.correct-answer {
+            border-left-color: #28a745;
+        }
+
+        .review-item.wrong-answer {
+            border-left-color: #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+
+            .avatar-section {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #e9ecef;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .progress-bar {
+                width: 100%;
+                margin: 15px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Sage - Playwright API Testing</h1>
+            <p>Complete Training Guide for the Xtrem Framework</p>
+        </div>
+
+        <div class="content">
+            <div class="avatar-section">
+                <div class="avatar">
+                    <svg class="avatar-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+                <div class="speech-bubble">
+                    <p id="avatar-text">Welcome! I'm your guide through the Playwright API Testing framework. Let's get started!</p>
+                </div>
+            </div>
+
+            <div class="slide-section">
+                <!-- Slide 0: What is Playwright -->
+                <div class="slide active" data-avatar="Let me start by introducing Playwright - the powerful automation framework that powers our testing infrastructure!">
+                    <h2>🎭 What is Playwright?</h2>
+                    <p><span class="highlight">Playwright</span> is a modern, open-source browser automation library developed by Microsoft that enables reliable end-to-end testing across all major browsers.</p>
+                    
+                    <h3>Key Features</h3>
+                    <ul>
+                        <li><strong>Cross-browser support</strong> - Works seamlessly on Chromium, Firefox, and WebKit</li>
+                        <li><strong>Multiple languages</strong> - Available in JavaScript, Python, .NET, and Java</li>
+                        <li><strong>Fast and reliable</strong> - Auto-waits for elements, built-in retry logic</li>
+                        <li><strong>Network control</strong> - Intercept and modify network requests</li>
+                        <li><strong>Full context isolation</strong> - Lightweight isolation for parallel testing</li>
+                        <li><strong>Inspector & Debugging</strong> - Built-in tools for test development and debugging</li>
+                    </ul>
+
+                    <h3>Why Playwright for API Testing?</h3>
+                    <div class="info-box">
+                        <strong>💡 Perfect Foundation:</strong> While Playwright excels at browser automation, the <strong>Xtrem Framework</strong> leverages Playwright's powerful infrastructure - particularly its context and fixture capabilities - to create a robust, type-safe API testing solution with GraphQL support.
+                    </div>
+                </div>
+
+                <!-- Slide 1: Introduction -->
+                <div class="slide" data-avatar="Welcome! I'm your guide through the Playwright API Testing framework. Let's get started with the essentials!">
+                    <h2>📚 Welcome to API Testing with Playwright</h2>
+                    <p>This comprehensive training will guide you through the <span class="highlight">Xtrem API Testing Framework</span>, a powerful tool built on Playwright for testing GraphQL APIs with full type safety.</p>
+                    
+                    <h3>What You'll Learn:</h3>
+                    <ul>
+                        <li>Understanding the framework architecture and key components</li>
+                        <li>Running tests locally and in CI/CD pipelines</li>
+                        <li>Writing effective API tests with best practices</li>
+                        <li>Creating reusable test utilities and helper classes</li>
+                        <li>Implementing proper tagging strategies for test organization</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <strong>💡 Key Technologies:</strong> Playwright, TypeScript, GraphQL, and the @sage/xtrem ecosystem provide a robust foundation for API testing with complete type safety.
+                    </div>
+                </div>
+
+                <!-- Slide 2: Quick Start -->
+                <div class="slide" data-avatar="Let's start with the basics - getting your environment ready and running your first test suite!">
+                    <h2>🚀 Quick Start Guide</h2>
+                    
+                    <h3>Prerequisites</h3>
+                    <ul>
+                        <li>Node.js 18 or higher installed</li>
+                        <li>pnpm package manager</li>
+                        <li>Access to the Xtrem project repository</li>
+                    </ul>
+
+                    <h3>Installation & First Run</h3>
+                    <div class="code-block"><span class="comment"># Navigate to the test directory</span>
+<span class="keyword">cd</span> services/api-test
+
+<span class="comment"># Install dependencies</span>
+<span class="keyword">pnpm</span> install
+
+<span class="comment"># Run all tests</span>
+<span class="keyword">pnpm</span> test
+
+<span class="comment"># Run specific test module</span>
+<span class="keyword">pnpm</span> test tests/master-data/
+
+<span class="comment"># Run with specific tags</span>
+<span class="keyword">pnpm</span> test:development
+</div>
+
+                    <div class="info-box">
+                        <strong>💡 Pro Tip:</strong> The framework automatically starts the server via serverPath configuration, so you don't need to manually start services for testing.
+                    </div>
+                </div>
+
+                <!-- Slide 3: Framework Architecture -->
+                <div class="slide" data-avatar="Now let's understand how the framework is structured. It's organized in clear layers that separate concerns beautifully!">
+                    <h2>🏗️ Framework Architecture</h2>
+                    
+                    <h3>Project Structure Overview</h3>
+                    <div class="architecture-diagram">
+services/api-test/
+├── lib/                    # Shared utilities
+│   ├── index.ts           # Typed fixtures
+│   ├── functions/         # Helper functions
+│   ├── master-data/       # Domain helpers
+│   ├── sales/            # Sales helpers
+│   └── system/           # System helpers
+├── tests/                 # Test files by domain
+│   ├── master-data/
+│   ├── sales/
+│   └── system/
+└── playwright.config.ts   # Configuration
+                    </div>
+
+                    <h3>Four Key Layers</h3>
+                    <div class="layer">
+                        <strong>1. Fixtures Layer</strong> - Provides typed GraphQL access with full type safety
+                    </div>
+                    <div class="layer">
+                        <strong>2. Helper Classes</strong> - Domain-specific operations extending BaseNode
+                    </div>
+                    <div class="layer">
+                        <strong>3. Utility Functions</strong> - Pure functions for test data generation
+                    </div>
+                    <div class="layer">
+                        <strong>4. Test Layer</strong> - Actual test implementations using all above
+                    </div>
+                </div>
+
+                <!-- Slide 4: Running Tests -->
+                <div class="slide" data-avatar="There are many ways to run tests depending on your needs. Let me show you the most common commands and what they do!">
+                    <h2>▶️ Running Tests Effectively</h2>
+                    
+                    <h3>Essential Test Commands</h3>
+                    <div class="code-block"><span class="comment"># Standard test run</span>
+<span class="keyword">pnpm</span> test
+
+<span class="comment"># Quick run (skip layer loading)</span>
+<span class="keyword">pnpm</span> test:quick
+
+<span class="comment"># Debug mode with logging</span>
+<span class="keyword">pnpm</span> test:debug
+
+<span class="comment"># Run only development tests</span>
+<span class="keyword">pnpm</span> test:development
+
+<span class="comment"># Run only release tests</span>
+<span class="keyword">pnpm</span> test:release
+
+<span class="comment"># Run specific file</span>
+<span class="keyword">pnpm</span> test tests/master-data/customer.spec.ts
+
+<span class="comment"># Watch mode for development</span>
+<span class="keyword">pnpm</span> test --watch
+</div>
+
+                    <h3>Important Environment Variables</h3>
+                    <ul>
+                        <li><code>PLAYWRIGHT_SKIP_LAYER_LOAD=true</code> - Skip test data layer loading (faster)</li>
+                        <li><code>PLAYWRIGHT_GRAPH_LOG=true</code> - Enable GraphQL request/response logging</li>
+                        <li><code>DEBUG=pw:webserver</code> - Enable server debug output</li>
+                        <li><code>CI=true</code> - Activates CI mode (affects retries and workers)</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 5: Writing Your First Test -->
+                <div class="slide" data-avatar="Now for the exciting part - writing your first test! I'll show you the complete structure and best practices.">
+                    <h2>✍️ Writing Your First Test</h2>
+                    
+                    <h3>Basic Test Structure</h3>
+                    <div class="code-block"><span class="keyword">import</span> { expect } <span class="keyword">from</span> <span class="string">'@playwright/test'</span>;
+<span class="keyword">import</span> { test } <span class="keyword">from</span> <span class="string">'../../lib'</span>;
+<span class="keyword">import</span> { MasterData } <span class="keyword">from</span> <span class="string">'../../lib/master-data'</span>;
+
+test.<span class="function">describe</span>(<span class="string">'Customer'</span>, () => {
+    test(<span class="string">'@development Customer CRUD'</span>, <span class="keyword">async</span> ({ graph }) => {
+        <span class="keyword">const</span> customerClass = <span class="keyword">new</span> MasterData.<span class="class">Customer</span>(graph);
+        <span class="keyword">let</span> customer;
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Create customer'</span>, <span class="keyword">async</span> () => {
+            customer = <span class="keyword">await</span> customerClass.<span class="function">create</span>();
+            <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+        });
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Update customer'</span>, <span class="keyword">async</span> () => {
+            <span class="keyword">const</span> updated = <span class="keyword">await</span> customerClass.<span class="function">update</span>({
+                name: <span class="string">'Updated Name'</span>
+            });
+            <span class="function">expect</span>(updated.name).<span class="function">toBe</span>(<span class="string">'Updated Name'</span>);
+        });
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Delete customer'</span>, <span class="keyword">async</span> () => {
+            <span class="keyword">await</span> customerClass.<span class="function">delete</span>({ _id: customer._id });
+        });
+    });
+});
+</div>
+
+                    <div class="warning-box">
+                        <strong>⚠️ Remember:</strong> Always use test.step() for better organization and reporting. Tag your tests appropriately (@development, @release, @flaky).
+                    </div>
+                </div>
+
+                <!-- Slide 6: Helper Classes -->
+                <div class="slide" data-avatar="Helper classes are the backbone of maintainable tests. Let me show you how to create powerful, reusable domain helpers!">
+                    <h2>🛠️ Creating Helper Classes</h2>
+                    
+                    <h3>BaseNode Extension Pattern</h3>
+                    <p>Helper classes extend <span class="highlight">BaseNode</span> to provide domain-specific operations with full type safety.</p>
+
+                    <div class="code-block"><span class="keyword">import</span> { BaseNode } <span class="keyword">from</span> <span class="string">'@sage/xtrem-playwright'</span>;
+<span class="keyword">import</span> { randomString } <span class="keyword">from</span> <span class="string">'../functions/random'</span>;
+
+<span class="keyword">export class</span> <span class="class">PartnerClass</span> <span class="keyword">extends</span> <span class="class">BaseNode</span>&lt;
+    <span class="type">GraphApi</span>, <span class="type">Partner</span>, <span class="type">PartnerInput</span>, <span class="type">PartnerType</span>
+&gt; {
+    <span class="keyword">get</span> <span class="function">nodeName</span>() {
+        <span class="keyword">return</span> <span class="string">'@sage/xtrem-master-data/Partner'</span>;
+    }
+
+    <span class="keyword">get</span> <span class="function">defaultSelector</span>() {
+        <span class="keyword">return</span> {
+            _id: <span class="keyword">true</span>,
+            code: <span class="keyword">true</span>,
+            name: <span class="keyword">true</span>,
+            isActive: <span class="keyword">true</span>
+        };
+    }
+
+    <span class="keyword">async</span> <span class="function">getRandomData</span>(createData?: <span class="type">PartnerInput</span>) {
+        <span class="keyword">const</span> code = <span class="function">randomString</span>(<span class="number">6</span>).<span class="function">toUpperCase</span>();
+        <span class="keyword">return</span> {
+            code,
+            name: <span class="string">`Partner ${code}`</span>,
+            isActive: <span class="keyword">true</span>,
+            ...createData
+        };
+    }
+}
+</div>
+
+                    <h3>Benefits</h3>
+                    <ul>
+                        <li>Automatic CRUD operations (create, query, update, delete)</li>
+                        <li>Random data generation for tests</li>
+                        <li>Type-safe GraphQL operations</li>
+                        <li>Reusable across multiple test files</li>
+                    </ul>
+                </div>
+
+                <!-- Slide 7: Tagging Strategy -->
+                <div class="slide" data-avatar="Proper tagging is crucial for organizing tests and CI/CD integration. Let me explain our three-tier tagging system!">
+                    <h2>🏷️ Test Tagging Strategy</h2>
+                    
+                    <h3>The Three Standard Tags</h3>
+                    
+                    <div class="layer">
+                        <strong>@development</strong><br>
+                        For feature development, integration testing, and core functionality verification. These tests run during active development cycles.
+                    </div>
+
+                    <div class="layer">
+                        <strong>@release</strong><br>
+                        Stable, production-ready tests that verify API contracts. These must always pass in release builds and are critical for deployments.
+                    </div>
+
+                    <div class="layer">
+                        <strong>@flaky</strong><br>
+                        Tests with known intermittent failures, external dependencies, or timing issues. These are monitored separately while fixes are developed.
+                    </div>
+
+                    <h3>Usage Examples</h3>
+                    <div class="code-block"><span class="comment">// Single tag</span>
+test(<span class="string">'@development Customer creation'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="comment">// Development test code</span>
+});
+
+<span class="comment">// Multiple tags using pipe syntax</span>
+test(<span class="string">'@development|@release Core API'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="comment">// Runs in both suites</span>
+});
+
+<span class="comment">// Run specific tags</span>
+<span class="keyword">pnpm</span> test --grep @release
+</div>
+                </div>
+
+                <!-- Slide 8: Best Practices -->
+                <div class="slide" data-avatar="Following best practices ensures maintainable, reliable tests. These guidelines come from real-world experience!">
+                    <h2>✅ Best Practices</h2>
+                    
+                    <h3>1. Test Independence</h3>
+                    <p>Each test must be completely independent and create its own data. Never rely on data from other tests or shared global state.</p>
+
+                    <h3>2. Use Test Steps</h3>
+                    <p>Break tests into logical steps for better reporting and debugging. Each step should represent a meaningful action.</p>
+
+                    <h3>3. Meaningful Assertions</h3>
+                    <div class="code-block"><span class="comment">// ✅ GOOD - Clear assertions with messages</span>
+<span class="function">expect</span>(customer._id, <span class="string">'Customer ID should exist'</span>).<span class="function">toBeDefined</span>();
+<span class="function">expect</span>(customer.isActive, <span class="string">'Should be active by default'</span>).<span class="function">toBe</span>(<span class="keyword">true</span>);
+
+<span class="comment">// ❌ POOR - Generic assertions</span>
+<span class="function">expect</span>(customer).<span class="function">toBeDefined</span>();
+</div>
+
+                    <h3>4. Clean Up Test Data</h3>
+                    <p>Always delete created test data, especially in @release tests. Use try-finally blocks to ensure cleanup happens even if tests fail.</p>
+
+                    <h3>5. Leverage Helper Classes</h3>
+                    <p>Use domain helper classes instead of raw graph queries for better maintainability and reusability.</p>
+                </div>
+
+                <!-- Slide 9: Troubleshooting -->
+                <div class="slide" data-avatar="Even with the best framework, issues can occur. Here are the most common problems and their solutions!">
+                    <h2>🔧 Troubleshooting Guide</h2>
+                    
+                    <h3>Common Issues & Solutions</h3>
+                    
+                    <div class="warning-box">
+                        <strong>Issue:</strong> Tests fail with "Cannot query field"<br>
+                        <strong>Solution:</strong> Verify the field exists in GraphQL schema and check your selector matches the API definition.
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>Issue:</strong> "No _id to update" error<br>
+                        <strong>Solution:</strong> Ensure entity is created before updating. The helper class needs an entity instance.
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>Issue:</strong> Layer load takes too long<br>
+                        <strong>Solution:</strong> Use <code>PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test</code> for faster development iterations.
+                    </div>
+
+                    <h3>Debugging Tools</h3>
+                    <div class="code-block"><span class="comment"># Enable GraphQL logging</span>
+<span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+
+<span class="comment"># Full debug mode</span>
+<span class="keyword">DEBUG</span>=pw:webserver <span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+
+<span class="comment"># Run single test with verbose output</span>
+<span class="keyword">pnpm</span> test tests/master-data/customer.spec.ts --debug
+</div>
+                </div>
+
+                <!-- Slide 10: Summary -->
+                <div class="slide" data-avatar="Congratulations! You now have a solid foundation in Playwright API testing. Remember these key takeaways!">
+                    <h2>🎯 Training Summary</h2>
+                    
+                    <h3>Key Takeaways</h3>
+                    <ul>
+                        <li>The framework has <strong>four clear layers</strong>: Fixtures, Helpers, Utilities, and Tests</li>
+                        <li>Use <strong>helper classes</strong> extending BaseNode for domain operations</li>
+                        <li>Always <strong>tag tests</strong> appropriately (@development, @release, @flaky)</li>
+                        <li>Write <strong>independent tests</strong> that create their own data</li>
+                        <li>Use <strong>test.step()</strong> for better organization and reporting</li>
+                        <li><strong>Clean up test data</strong> to avoid pollution</li>
+                        <li>Leverage <strong>environment variables</strong> for debugging and optimization</li>
+                    </ul>
+
+                    <h3>Quick Reference Commands</h3>
+                    <div class="code-block"><span class="comment"># Development workflow</span>
+<span class="keyword">pnpm</span> test:development          <span class="comment"># Run dev tests</span>
+<span class="keyword">pnpm</span> test --watch             <span class="comment"># Watch mode</span>
+
+<span class="comment"># Production verification</span>
+<span class="keyword">pnpm</span> test:release             <span class="comment"># Run release tests</span>
+
+<span class="comment"># Debugging</span>
+<span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+<span class="keyword">PLAYWRIGHT_SKIP_LAYER_LOAD</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+</div>
+
+                    <div class="info-box">
+                        <strong>📚 Next Steps:</strong> Review existing tests in <code>tests/master-data/</code> for real examples. Start with simple CRUD operations and gradually build more complex scenarios. Don't hesitate to create helper classes for reusability!
+                    </div>
+
+                    <h3 style="text-align: center; color: #667eea; margin-top: 40px;">Ready for more details? →</h3>
+                </div>
+
+                <!-- Slide 11: Full Documentation Option -->
+                <div class="slide" data-avatar="Before the assessment, would you like to review the complete README documentation? It has more detailed examples and advanced topics!">
+                    <h2>📖 Complete Documentation</h2>
+                    
+                    <p style="font-size: 1.2em; margin-bottom: 30px;">Would you like to read the <strong>full README documentation</strong> before taking the assessment? It contains comprehensive details, additional examples, and advanced patterns.</p>
+
+                    <div class="info-box">
+                        <h3 style="color: #667eea;">📄 What's in the Full README?</h3>
+                        <ul>
+                            <li>Detailed framework architecture with complete directory structure</li>
+                            <li>Advanced helper class patterns and utilities</li>
+                            <li>Complete CI/CD configuration details</li>
+                            <li>Extended troubleshooting guide with solutions</li>
+                            <li>Comprehensive example templates</li>
+                            <li>Additional best practices and patterns</li>
+                            <li>Setup fixture patterns and assertion helpers</li>
+                            <li>Mock data builders and more</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; margin-top: 40px; justify-content: center;">
+                        <button class="btn" onclick="showReadme()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            📖 Yes, Show Full README
+                        </button>
+                        <button class="btn" onclick="changeSlide(2)">
+                            ⏭️ Skip to Assessment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Slide 12: Full README -->
+                <div class="slide" data-avatar="Here's the complete README documentation. Take your time to review it thoroughly. When ready, proceed to the assessment!">
+                    <h2>📚 Full README Documentation</h2>
+                    
+                    <div style="background: #f8f9fa; border: 2px solid #667eea; border-radius: 10px; padding: 30px; max-height: 70vh; overflow-y: auto; margin: 20px 0;">
+                        <div id="readme-content" style="line-height: 1.8; font-size: 0.95em;">
+                            <h1>API Tests Training &amp; Documentation</h1>
+                            <p>Welcome to the Xtrem API Testing framework! This document provides comprehensive guidance for developers and QA engineers to create, run, and maintain API tests using Playwright.</p>
+                            
+                            <h2>Table of Contents</h2>
+                            <ol>
+                                <li><a href="#quick-start">Quick Start</a></li>
+                                <li><a href="#framework-architecture">Framework Architecture</a></li>
+                                <li><a href="#running-tests">Running Tests</a></li>
+                                <li><a href="#adding-new-tests">Adding New Tests</a></li>
+                                <li><a href="#creating-test-utilities">Creating Test Utilities</a></li>
+                                <li><a href="#tagging-strategy">Tagging Strategy</a></li>
+                                <li><a href="#example-template">Example Template</a></li>
+                                <li><a href="#best-practices">Best Practices</a></li>
+                                <li><a href="#troubleshooting">Troubleshooting</a></li>
+                            </ol>
+                            
+                            <hr style="margin: 30px 0; border: none; border-top: 2px solid #ddd;">
+
+                            <h2 id="quick-start">Quick Start</h2>
+                            <h3>Prerequisites</h3>
+                            <ul>
+                                <li>Node.js 18+ and pnpm installed</li>
+                                <li>Project dependencies installed: <code>pnpm install</code></li>
+                                <li>Application running locally or ability to start it via Playwright</li>
+                            </ul>
+
+                            <h3>First Test Run</h3>
+                            <div class="code-block"><span class="comment"># Navigate to api-test directory</span>
+<span class="keyword">cd</span> services/api-test
+
+<span class="comment"># Run all tests</span>
+<span class="keyword">pnpm</span> test
+
+<span class="comment"># Run tests for a specific module</span>
+<span class="keyword">pnpm</span> test tests/master-data/
+
+<span class="comment"># Run tests with specific tags</span>
+<span class="keyword">pnpm</span> test:development</div>
+
+                            <h2 id="framework-architecture">Framework Architecture</h2>
+                            <h3>Overview</h3>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; border: 1px solid #dee2e6; font-size: 0.85em;">services/api-test/
+├── lib/                              # Shared utilities and helper classes
+│   ├── index.ts                      # Typed test fixture export
+│   ├── functions/
+│   │   └── random.ts                 # Random data generation utilities
+│   ├── master-data/                  # Master data domain helpers
+│   │   ├── business-entity.ts
+│   │   ├── customer.ts
+│   │   ├── item.ts
+│   │   ├── site.ts
+│   │   ├── supplier.ts
+│   │   └── index.ts
+│   ├── sales/                        # Sales domain helpers
+│   │   ├── sales-order.ts
+│   │   └── index.ts
+│   ├── system/                       # System domain helpers
+│   │   └── index.ts
+│   └── reporters/
+│       └── error-summary-reporter.ts # Custom error reporting
+├── tests/                             # Test files organized by domain
+│   ├── master-data/
+│   │   ├── customer.spec.ts
+│   │   ├── item.spec.ts
+│   │   ├── supplier.spec.ts
+│   │   ├── business-entity.spec.ts
+│   │   └── site.spec.ts
+│   ├── sales/
+│   │   └── order.spec.ts
+│   └── system/
+│       └── service-option.spec.ts
+├── playwright.config.ts              # Playwright configuration
+├── package.json                      # NPM scripts and dependencies
+├── tsconfig.json                     # TypeScript configuration
+└── setup.ts                          # Global setup (data layer loading)</pre>
+
+                            <h3>Key Technologies</h3>
+                            <ul>
+                                <li><strong>Playwright:</strong> Modern testing framework with excellent API testing support</li>
+                                <li><strong>TypeScript:</strong> Full type safety for GraphQL API interactions</li>
+                                <li><strong>@sage/xtrem-playwright:</strong> Framework utilities for Xtrem-specific testing patterns</li>
+                                <li><strong>@sage/xtrem-client:</strong> Typed GraphQL client for API interaction</li>
+                                <li><strong>BaseNode:</strong> Generic class for CRUD operations on any GraphQL entity</li>
+                            </ul>
+
+                            <h3>Architecture Layers</h3>
+                            <h4>1. Fixtures Layer</h4>
+                            <p>Provides typed GraphQL fixtures with full API type safety. Available fixtures include <code>graph</code> (read-only queries) and <code>graphMutation</code> (mutations and write operations).</p>
+
+                            <h4>2. Helper Classes Layer</h4>
+                            <p>Domain-specific classes extending <code>BaseNode</code> that encapsulate entity operations. Provides automatic CRUD operations, random data generation, and type-safe GraphQL interactions.</p>
+
+                            <h4>3. Utility Functions Layer</h4>
+                            <p>Pure functions for generating test data, including <code>randomString()</code>, <code>randomInt()</code>, and other utilities.</p>
+
+                            <h4>4. Test Layer</h4>
+                            <p>Actual test files using the fixtures and helpers to implement test scenarios.</p>
+
+                            <h2 id="running-tests">Running Tests</h2>
+                            <h3>Available Commands</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em;">
+                                <thead>
+                                    <tr style="background: #667eea; color: white;">
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Command</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Purpose</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Flags</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Run all tests with standard configuration</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">-</td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:quick</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Skip layer loading for faster execution</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>PLAYWRIGHT_SKIP_LAYER_LOAD=true</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:debug</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Run with GraphQL logging and server logs</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>PLAYWRIGHT_GRAPH_LOG=true</code>, <code>DEBUG=pw:webserver</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:all</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Run with chromium project explicitly</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:development</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Run only @development tagged tests</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">-</td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:release</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Run only @release tagged tests</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:flaky</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Run only @flaky tagged tests</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3>Running Tests Locally</h3>
+                            <h4>Step 1: Ensure Dependencies Are Installed</h4>
+                            <div class="code-block"><span class="keyword">cd</span> services/api-test
+<span class="keyword">pnpm</span> install</div>
+
+                            <h4>Step 2: Start Services (if required)</h4>
+                            <p>The test framework will automatically start the server via the <code>serverPath</code> configuration.</p>
+
+                            <h4>Step 3: Run Tests</h4>
+                            <div class="code-block"><span class="comment"># Basic run</span>
+<span class="keyword">pnpm</span> test
+
+<span class="comment"># Run with logging</span>
+PLAYWRIGHT_GRAPH_LOG<span class="operator">=</span><span class="keyword">true</span> <span class="keyword">pnpm</span> test
+
+<span class="comment"># Run single file</span>
+<span class="keyword">pnpm</span> test tests/master-data/customer.spec.ts
+
+<span class="comment"># Run with specific tags</span>
+<span class="keyword">pnpm</span> test <span class="operator">--</span>grep @development
+
+<span class="comment"># Run with watch mode (development)</span>
+<span class="keyword">pnpm</span> test <span class="operator">--</span>watch</div>
+
+                            <h3>Running Tests in CI</h3>
+                            <p>The CI pipeline automatically shards tests across multiple workers, retries failed tests, limits workers to 3 for efficiency, and generates HTML reports.</p>
+
+                            <h3>Environment Variables</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em;">
+                                <thead>
+                                    <tr style="background: #667eea; color: white;">
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Variable</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Purpose</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>PLAYWRIGHT_SKIP_LAYER_LOAD</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Skip loading test data layer</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>true</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>PLAYWRIGHT_GRAPH_LOG</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Enable GraphQL request/response logging</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>true</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>DEBUG</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Enable debug output</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pw:webserver</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>CI</code></td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Set CI mode (affects retries and workers)</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>true</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h2 id="adding-new-tests">Adding New Tests</h2>
+                            <h3>Step 1: Identify Your Domain</h3>
+                            <p>Determine if your test belongs to existing domains or a new one: master-data, sales, or system.</p>
+
+                            <h3>Step 2: Create the Test File</h3>
+                            <div class="code-block"><span class="comment">// tests/master-data/partner.spec.ts</span>
+<span class="keyword">import</span> { expect } <span class="keyword">from</span> <span class="string">'@playwright/test'</span>;
+<span class="keyword">import</span> { test } <span class="keyword">from</span> <span class="string">'../../lib'</span>;
+<span class="keyword">import</span> { <span class="class">MasterData</span> } <span class="keyword">from</span> <span class="string">'../../lib/master-data'</span>;
+
+test.<span class="function">describe</span>(<span class="string">'Partner'</span>, () => {
+    test(<span class="string">'@development Partner CRUD operations'</span>, <span class="keyword">async</span> ({ graph }) => {
+        <span class="keyword">const</span> partnerClass = <span class="keyword">new</span> <span class="class">MasterData</span>.<span class="class">Partner</span>(graph);
+        <span class="comment">// Your test steps here</span>
+    });
+});</div>
+
+                            <h3>Step 3: Use Test Steps</h3>
+                            <p>Use Playwright's <code>test.step()</code> for better reporting and organization of test logic.</p>
+
+                            <h3>Step 4: Tag Your Tests</h3>
+                            <p>Always tag your tests appropriately using @development, @release, or @flaky tags.</p>
+
+                            <h2 id="creating-test-utilities">Creating Test Utilities</h2>
+                            <h3>Pattern 1: Domain Helper Class (Recommended)</h3>
+                            <p>Extend <code>BaseNode</code> for entity-specific operations with full type safety and automatic CRUD operations.</p>
+
+                            <h3>Pattern 2: Pure Utility Functions</h3>
+                            <p>Create pure functions for common operations across multiple entities (date helpers, formatters, etc.).</p>
+
+                            <h3>Pattern 3: Setup Fixtures</h3>
+                            <p>Build reusable setup functions for common test data scenarios to reduce duplication.</p>
+
+                            <h3>Pattern 4: Assertion Helpers</h3>
+                            <p>Create specialized assertion functions for complex validations and repeated checks.</p>
+
+                            <h3>Pattern 5: Mock Data Builders</h3>
+                            <p>Use builder pattern for complex entity creation with fluent API and default values.</p>
+
+                            <h2 id="tagging-strategy">Tagging Strategy</h2>
+                            <h3>Standard Tags</h3>
+                            <p><strong>@development:</strong> Use for feature development and integration testing. Tests that verify core functionality using recent/unstable APIs. Run with <code>pnpm test:development</code>.</p>
+
+                            <p><strong>@release:</strong> Use for stable, production-ready tests verifying API contracts. Tests that should always pass in release builds. Run with <code>pnpm test:release</code>.</p>
+
+                            <p><strong>@flaky:</strong> Use for tests known to be intermittently failing. Tests with external dependencies. Run with <code>pnpm test:flaky</code>.</p>
+
+                            <h3>Combining Tags</h3>
+                            <p>Use pipe syntax to include multiple tags: <code>@development|@release</code> runs in both development and release suites.</p>
+
+                            <h2 id="example-template">Example Template</h2>
+                            <div class="code-block"><span class="comment">/**
+ * Tests for Partner entity CRUD operations
+ * Domain: master-data
+ * Coverage: Create, Read, Update, Delete operations
+ */</span>
+<span class="keyword">import</span> { expect } <span class="keyword">from</span> <span class="string">'@playwright/test'</span>;
+<span class="keyword">import</span> { test } <span class="keyword">from</span> <span class="string">'../../lib'</span>;
+<span class="keyword">import</span> { <span class="class">MasterData</span> } <span class="keyword">from</span> <span class="string">'../../lib/master-data'</span>;
+
+test.<span class="function">describe</span>(<span class="string">'Partner'</span>, () => {
+    test(<span class="string">'@development Partner CRUD operations'</span>, <span class="keyword">async</span> ({ graph }) => {
+        <span class="keyword">const</span> partnerClass = <span class="keyword">new</span> <span class="class">MasterData</span>.<span class="class">Partner</span>(graph);
+        <span class="keyword">let</span> createdPartner;
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Create a partner'</span>, <span class="keyword">async</span> () => {
+            createdPartner = <span class="keyword">await</span> partnerClass.<span class="function">create</span>();
+            <span class="function">expect</span>(createdPartner).<span class="function">toBeDefined</span>();
+            <span class="function">expect</span>(createdPartner._id).<span class="function">toBeDefined</span>();
+        });
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Query the created partner'</span>, <span class="keyword">async</span> () => {
+            <span class="keyword">const</span> queried = <span class="keyword">await</span> partnerClass.<span class="function">query</span>({
+                filter: { _id: createdPartner._id },
+            });
+            <span class="function">expect</span>(queried.length).<span class="function">toBe</span>(<span class="number">1</span>);
+        });
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Update partner properties'</span>, <span class="keyword">async</span> () => {
+            <span class="keyword">const</span> updated = <span class="keyword">await</span> partnerClass.<span class="function">update</span>({
+                _id: createdPartner._id,
+                name: <span class="string\">'Updated Name'</span>,
+            });
+            <span class="function">expect</span>(updated.name).<span class="function">toBe</span>(<span class="string">'Updated Name'</span>);
+        });
+
+        <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Delete the partner'</span>, <span class="keyword">async</span> () => {
+            <span class="keyword">await</span> partnerClass.<span class="function">delete</span>({ _id: createdPartner._id });
+            <span class="keyword">const</span> deleted = <span class="keyword">await</span> partnerClass.<span class="function">query</span>({
+                filter: { _id: createdPartner._id },
+            });
+            <span class="function">expect</span>(deleted.length).<span class="function">toBe</span>(<span class="number">0</span>);
+        });
+    });
+});</div>
+
+                            <h2 id="best-practices">Best Practices</h2>
+
+                            <h3>1. Test Independence</h3>
+                            <p>Each test should be completely independent and not rely on other tests:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD - Each test creates its own data</span>
+<span class="keyword">test</span>(<span class="string">'@development Create customer A'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> graph.Customer.<span class="function">create</span>({ name: <span class="string">'Customer A'</span> });
+    <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+});
+
+<span class="keyword">test</span>(<span class="string">'@development Create customer B'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> graph.Customer.<span class="function">create</span>({ name: <span class="string">'Customer B'</span> });
+    <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+});
+
+<span class="comment">// ❌ BAD - Test B depends on Test A</span>
+<span class="keyword">test</span>(<span class="string">'@development Create customer'</span>, <span class="keyword">async</span> ({ graph }) => {
+    global.customerId = <span class="keyword">await</span> graph.Customer.<span class="function">create</span>();
+});
+
+<span class="keyword">test</span>(<span class="string">'@development Update customer'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">await</span> graph.Customer.<span class="function">update</span>({ _id: global.customerId });
+});</div>
+
+                            <h3>2. Use Test Steps for Organization</h3>
+                            <p>Break tests into logical steps for better reporting and debugging:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD</span>
+<span class="keyword">test</span>(<span class="string">'@development Order workflow'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">let</span> orderId: <span class="keyword">string</span>;
+
+    <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Create order'</span>, <span class="keyword">async</span> () => {
+        <span class="keyword">const</span> order = <span class="keyword">await</span> graph.Order.<span class="function">create</span>();
+        orderId = order._id;
+    });
+
+    <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Add items to order'</span>, <span class="keyword">async</span> () => {
+        <span class="keyword">await</span> graph.OrderItem.<span class="function">create</span>({ orderId });
+    });
+
+    <span class="keyword">await</span> test.<span class="function">step</span>(<span class="string">'Submit order'</span>, <span class="keyword">async</span> () => {
+        <span class="keyword">await</span> graph.Order.<span class="function">submit</span>({ _id: orderId });
+    });
+});
+
+<span class="comment">// ❌ POOR - No step organization</span>
+<span class="keyword">test</span>(<span class="string">'@development Order workflow'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> order = <span class="keyword">await</span> graph.Order.<span class="function">create</span>();
+    <span class="keyword">await</span> graph.OrderItem.<span class="function">create</span>({ orderId: order._id });
+    <span class="keyword">await</span> graph.Order.<span class="function">submit</span>({ _id: order._id });
+});</div>
+
+                            <h3>3. Meaningful Assertions</h3>
+                            <p>Use clear assertions with helpful messages:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD</span>
+<span class="keyword">test</span>(<span class="string">'@development Verify customer creation'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> graph.Customer.<span class="function">create</span>();
+
+    <span class="function">expect</span>(customer._id, <span class="string">'Customer ID should be generated'</span>).<span class="function">toBeDefined</span>();
+    <span class="function">expect</span>(customer.code, <span class="string">'Customer code should be set'</span>).<span class="function">toBeTruthy</span>();
+    <span class="function">expect</span>(customer.isActive, <span class="string">'Customer should be active by default'</span>).<span class="function">toBe</span>(<span class="keyword">true</span>);
+});
+
+<span class="comment">// ❌ POOR - Generic assertions</span>
+<span class="keyword">test</span>(<span class="string">'@development Create customer'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> graph.Customer.<span class="function">create</span>();
+    <span class="function">expect</span>(customer).<span class="function">toBeDefined</span>();
+    <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+});</div>
+
+                            <h3>4. Leverage Helper Classes</h3>
+                            <p>Use domain helper classes instead of raw graph queries:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD</span>
+<span class="keyword">test</span>(<span class="string">'@development Customer operations'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customerClass = <span class="keyword">new</span> MasterData.Customer(graph);
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> customerClass.<span class="function">create</span>();
+    <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+});
+
+<span class="comment">// ❌ POOR - Direct graph manipulation</span>
+<span class="keyword">test</span>(<span class="string">'@development Customer operations'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> graph.Customer.<span class="function">query</span>({});
+    <span class="comment">// Manually managing selectors and filters</span>
+});</div>
+
+                            <h3>5. Clean Up Test Data</h3>
+                            <p>Always delete created test data, especially for @release tests:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD</span>
+<span class="keyword">test</span>(<span class="string">'@release Customer operations'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customerClass = <span class="keyword">new</span> MasterData.Customer(graph);
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> customerClass.<span class="function">create</span>();
+
+    <span class="keyword">try</span> {
+        <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+    } <span class="keyword">finally</span> {
+        <span class="comment">// Cleanup happens even if test fails</span>
+        <span class="keyword">await</span> customerClass.<span class="function">delete</span>({ _id: customer._id });
+    }
+});
+
+<span class="comment">// ❌ POOR - No cleanup</span>
+<span class="keyword">test</span>(<span class="string">'@release Customer operations'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customer = <span class="keyword">await</span> graph.Customer.<span class="function">create</span>();
+    <span class="function">expect</span>(customer._id).<span class="function">toBeDefined</span>();
+    <span class="comment">// Test data left behind!</span>
+});</div>
+
+                            <h3>6. Use Appropriate Test Tags</h3>
+                            <p>Tag tests according to their stability and lifecycle:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD - Clear intent</span>
+<span class="keyword">test</span>(<span class="string">'@development Experimental feature'</span>, <span class="keyword">async</span> ({ graph }) => { ... });
+<span class="keyword">test</span>(<span class="string">'@release Core API contract'</span>, <span class="keyword">async</span> ({ graph }) => { ... });
+<span class="keyword">test</span>(<span class="string">'@flaky Sync operations with timeout'</span>, <span class="keyword">async</span> ({ graph }) => { ... });
+
+<span class="comment">// ❌ POOR - Unclear tags</span>
+<span class="keyword">test</span>(<span class="string">'Feature test'</span>, <span class="keyword">async</span> ({ graph }) => { ... });
+<span class="keyword">test</span>(<span class="string">'Verify API'</span>, <span class="keyword">async</span> ({ graph }) => { ... });</div>
+
+                            <h3>7. Handle Random Data Properly</h3>
+                            <p>Store generated IDs for later queries:</p>
+                            <div class="code-block"><span class="comment">// ✅ GOOD</span>
+<span class="keyword">test</span>(<span class="string">'@development Query created customer'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customerClass = <span class="keyword">new</span> MasterData.Customer(graph);
+    <span class="keyword">const</span> created = <span class="keyword">await</span> customerClass.<span class="function">create</span>();
+    <span class="keyword">const</span> customerId = created._id;
+
+    <span class="keyword">const</span> queried = <span class="keyword">await</span> customerClass.<span class="function">query</span>({
+        filter: { _id: customerId },
+    });
+    <span class="function">expect</span>(queried[<span class="number">0</span>]._id).<span class="function">toBe</span>(customerId);
+});
+
+<span class="comment">// ❌ POOR - Assume specific data exists</span>
+<span class="keyword">test</span>(<span class="string">'@development Query customer'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="keyword">const</span> customers = <span class="keyword">await</span> graph.Customer.<span class="function">query</span>({});
+    <span class="function">expect</span>(customers.length).<span class="function">toBeGreaterThan</span>(<span class="number">0</span>);
+});</div>
+
+                            <h3>8. Organize Tests by Domain</h3>
+                            <p>Keep related tests together and organized:</p>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; border: 1px solid #dee2e6; font-size: 0.85em;">tests/
+├── master-data/         # Master data entities
+│   ├── customer.spec.ts
+│   ├── supplier.spec.ts
+│   └── item.spec.ts
+├── sales/              # Sales transactions
+│   ├── order.spec.ts
+│   └── quote.spec.ts
+└── system/             # System configuration
+    └── service-option.spec.ts</pre>
+
+                            <h2 id="troubleshooting">Troubleshooting</h2>
+                            <h3>Issue: Tests Fail with "Cannot query field"</h3>
+                            <p><strong>Cause:</strong> GraphQL selector doesn't match the API schema.</p>
+                            <p><strong>Solution:</strong> Verify the field exists in the GraphQL API definition. Check TypeScript types for correct field names. Update the selector in your helper class.</p>
+
+                            <h3>Issue: "No _id to update" Error</h3>
+                            <p><strong>Cause:</strong> Attempting to update without an entity ID.</p>
+                            <p><strong>Solution:</strong> Ensure entity is created or ID is provided before updating.</p>
+
+                            <h3>Issue: Layer Load Takes Too Long</h3>
+                            <p><strong>Cause:</strong> Test data layer loading from database.</p>
+                            <p><strong>Solution:</strong> Use quick mode for development: <code>PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test</code></p>
+
+                            <h3>Issue: Tests Pass Locally but Fail in CI</h3>
+                            <p><strong>Cause:</strong> Timing issues, parallel test conflicts, or environment differences.</p>
+                            <p><strong>Solutions:</strong> Increase timeouts for slow operations, mark as @flaky if intermittent, or check environment variables.</p>
+
+                            <h3>Issue: GraphQL Query Returns Empty</h3>
+                            <p><strong>Cause:</strong> Querying with incorrect filter or data doesn't exist.</p>
+                            <p><strong>Solution:</strong> Enable GraphQL logging: <code>PLAYWRIGHT_GRAPH_LOG=true pnpm test</code>. Check filters match your created data.</p>
+
+                            <h3>Issue: Random Data Conflicts</h3>
+                            <p><strong>Cause:</strong> Random string generation creates duplicates.</p>
+                            <p><strong>Solution:</strong> Extend random string length or use timestamps for uniqueness.</p>
+
+                            <h3>Debugging Tools</h3>
+                            <div class="code-block"><span class="comment"># Enable GraphQL logging</span>
+PLAYWRIGHT_GRAPH_LOG<span class="operator">=</span><span class="keyword">true</span> <span class="keyword">pnpm</span> test
+
+<span class="comment"># Full debug mode</span>
+DEBUG<span class="operator">=</span>pw:webserver PLAYWRIGHT_GRAPH_LOG<span class="operator">=</span><span class="keyword">true</span> <span class="keyword">pnpm</span> test
+
+<span class="comment"># Run single test with verbose output</span>
+<span class="keyword">pnpm</span> test tests/master-data/customer.spec.ts <span class="operator">--</span>debug</div>
+
+                            <h2>Additional Resources</h2>
+                            <h3>Running Tests Quick Reference</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em;">
+                                <thead>
+                                    <tr style="background: #667eea; color: white;">
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Scenario</th>
+                                        <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Command</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">All tests</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Development tests only</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:development</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Release tests only</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test:release</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Specific test file</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test tests/master-data/customer.spec.ts</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Watch mode</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>pnpm test --watch</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;">With GraphQL logs</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>PLAYWRIGHT_GRAPH_LOG=true pnpm test</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px; border: 1px solid #ddd;">Skip layer load</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test</code></td>
+                                    </tr>
+                                    <tr style="background: #f8f9fa;">
+                                        <td style="padding: 10px; border: 1px solid #ddd;">With debugging</td>
+                                        <td style="padding: 10px; border: 1px solid #ddd;"><code>DEBUG=pw:webserver PLAYWRIGHT_GRAPH_LOG=true pnpm test</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <h3>File Structure Quick Reference</h3>
+                            <ul style="font-size: 0.95em;">
+                                <li><strong>Write tests:</strong> <code>tests/[domain]/[feature].spec.ts</code></li>
+                                <li><strong>Create helpers:</strong> <code>lib/[domain]/[entity].ts</code></li>
+                                <li><strong>Pure functions:</strong> <code>lib/functions/[utility].ts</code></li>
+                                <li><strong>Share fixtures:</strong> Update <code>services/api-test/lib/index.ts</code></li>
+                            </ul>
+
+                            <h2>Getting Help</h2>
+                            <ol style="font-size: 0.95em;">
+                                <li><strong>Check existing tests</strong> - Review <code>services/api-test/tests/master-data/customer.spec.ts</code> for examples</li>
+                                <li><strong>Review helpers</strong> - See how <code>BaseNode</code> is used in <code>lib/master-data/*.ts</code></li>
+                                <li><strong>Debug with logs</strong> - Use <code>PLAYWRIGHT_GRAPH_LOG=true</code> environment variable</li>
+                                <li><strong>Consult framework docs</strong> - See <code>@sage/xtrem-playwright</code> documentation</li>
+                                <li><strong>Ask the team</strong> - Schedule knowledge-sharing sessions on API testing patterns</li>
+                            </ol>
+
+                            <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 5px; font-size: 0.95em;">
+                                <strong>💡 Pro Tip:</strong> The framework automatically starts the server via <code>serverPath</code> configuration, so you don't need to manually start services for testing. Always check existing tests in <code>tests/master-data/</code> for real-world examples and follow the tagging strategy for CI/CD integration!
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="changeSlide(1)" style="width: 100%; margin-top: 20px;">
+                        Continue to Assessment →
+                    </button>
+                </div>
+
+                <!-- Slide 13: Assessment -->
+                <div class="slide" data-avatar="Time to test your knowledge! You need 75% (9 out of 12 questions) to pass. Take your time and good luck!">
+                    <h2>📝 Knowledge Assessment</h2>
+                    <p style="font-size: 1.1em; color: #764ba2; margin-bottom: 20px;"><strong>Pass requirement: 75% (9 out of 12 correct answers)</strong></p>
+                    
+                    <div id="quiz-container">
+                        <div class="question">
+                            <p><strong>1. Which command runs only development-tagged tests?</strong></p>
+                            <label><input type="radio" name="q1" value="0"> pnpm test</label>
+                            <label><input type="radio" name="q1" value="1"> pnpm test:development</label>
+                            <label><input type="radio" name="q1" value="2"> pnpm test --dev</label>
+                            <label><input type="radio" name="q1" value="3"> pnpm test:quick</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>2. What is the correct way to create a domain helper class?</strong></p>
+                            <label><input type="radio" name="q2" value="0"> Extend TestCase</label>
+                            <label><input type="radio" name="q2" value="1"> Implement GraphQL interface</label>
+                            <label><input type="radio" name="q2" value="2"> Extend BaseNode</label>
+                            <label><input type="radio" name="q2" value="3"> Create a simple class</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>3. Which tag should be used for tests with known intermittent failures?</strong></p>
+                            <label><input type="radio" name="q3" value="0"> @development</label>
+                            <label><input type="radio" name="q3" value="1"> @flaky</label>
+                            <label><input type="radio" name="q3" value="2"> @unstable</label>
+                            <label><input type="radio" name="q3" value="3"> @release</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>4. What should you always do with test data in @release tests?</strong></p>
+                            <label><input type="radio" name="q4" value="0"> Delete it after the test</label>
+                            <label><input type="radio" name="q4" value="1"> Leave it for the next test</label>
+                            <label><input type="radio" name="q4" value="2"> Store it in a global variable</label>
+                            <label><input type="radio" name="q4" value="3"> Archive it in the database</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>5. Which environment variable enables GraphQL request/response logging?</strong></p>
+                            <label><input type="radio" name="q5" value="0"> DEBUG=true</label>
+                            <label><input type="radio" name="q5" value="1"> PLAYWRIGHT_LOG=true</label>
+                            <label><input type="radio" name="q5" value="2"> GRAPH_DEBUG=true</label>
+                            <label><input type="radio" name="q5" value="3"> PLAYWRIGHT_GRAPH_LOG=true</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>6. What is the main benefit of using test.step()?</strong></p>
+                            <label><input type="radio" name="q6" value="0"> Faster test execution</label>
+                            <label><input type="radio" name="q6" value="1"> Better reporting and debugging</label>
+                            <label><input type="radio" name="q6" value="2"> Automatic data cleanup</label>
+                            <label><input type="radio" name="q6" value="3"> Parallel execution</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>7. How many layers does the framework architecture have?</strong></p>
+                            <label><input type="radio" name="q7" value="0"> 2</label>
+                            <label><input type="radio" name="q7" value="1"> 3</label>
+                            <label><input type="radio" name="q7" value="2"> 4</label>
+                            <label><input type="radio" name="q7" value="3"> 5</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>8. Which fixture provides read-only GraphQL queries?</strong></p>
+                            <label><input type="radio" name="q8" value="0"> graph</label>
+                            <label><input type="radio" name="q8" value="1"> graphMutation</label>
+                            <label><input type="radio" name="q8" value="2"> graphQuery</label>
+                            <label><input type="radio" name="q8" value="3"> graphRead</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>9. Tests should be:</strong></p>
+                            <label><input type="radio" name="q9" value="0"> Dependent on execution order</label>
+                            <label><input type="radio" name="q9" value="1"> Completely independent</label>
+                            <label><input type="radio" name="q9" value="2"> Share global state</label>
+                            <label><input type="radio" name="q9" value="3"> Run sequentially only</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>10. Where should test files be organized?</strong></p>
+                            <label><input type="radio" name="q10" value="0"> All in one directory</label>
+                            <label><input type="radio" name="q10" value="1"> By test type</label>
+                            <label><input type="radio" name="q10" value="2"> By domain (master-data, sales, system)</label>
+                            <label><input type="radio" name="q10" value="3"> By developer name</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>11. Which method in BaseNode creates a new entity with random data?</strong></p>
+                            <label><input type="radio" name="q11" value="0"> create()</label>
+                            <label><input type="radio" name="q11" value="1"> insert()</label>
+                            <label><input type="radio" name="q11" value="2"> add()</label>
+                            <label><input type="radio" name="q11" value="3"> new()</label>
+                        </div>
+
+                        <div class="question">
+                            <p><strong>12. What does PLAYWRIGHT_SKIP_LAYER_LOAD=true do?</strong></p>
+                            <label><input type="radio" name="q12" value="0"> Skips all tests</label>
+                            <label><input type="radio" name="q12" value="1"> Skips loading test data layer for faster execution</label>
+                            <label><input type="radio" name="q12" value="2"> Disables test reporting</label>
+                            <label><input type="radio" name="q12" value="3"> Runs tests in debug mode</label>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="submitQuiz()" style="margin-top: 30px; width: 100%;">Submit Assessment</button>
+                    
+                    <div id="quiz-result" style="display: none; margin-top: 30px;"></div>
+                </div>
+
+                <!-- Slide 12: Results -->
+                <div class="slide" data-avatar="Great job completing the assessment! Check your results below.">
+                    <h2 id="results-title">📊 Assessment Results</h2>
+                    <div id="results-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="prevBtn" onclick="changeSlide(-1)">← Previous</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="slide-counter" id="slideCounter">1 / 10</span>
+            <button class="btn" id="nextBtn">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        const correctAnswers = {
+            q1: 1,
+            q2: 2,
+            q3: 1,
+            q4: 0,
+            q5: 3,
+            q6: 1,
+            q7: 2,
+            q8: 0,
+            q9: 1,
+            q10: 2,
+            q11: 0,
+            q12: 1
+        };
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const avatarText = document.getElementById('avatar-text');
+        const progressFill = document.getElementById('progressFill');
+        const slideCounter = document.getElementById('slideCounter');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        let quizSubmitted = false;
+        let quizScore = 0;
+        let emailSent = false;
+
+        function showReadme() {
+            changeSlide(1);
+        }
+
+        function closeTab() {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.close();
+            }
+        }
+
+        function updateSlide() {
+            slides.forEach(slide => slide.classList.remove('active'));
+            
+            slides[currentSlide].classList.add('active');
+            
+            const newText = slides[currentSlide].getAttribute('data-avatar');
+            avatarText.textContent = newText;
+            
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressFill.style.width = progress + '%';
+            
+            slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+            
+            prevBtn.disabled = currentSlide === 0;
+            
+            if (currentSlide === 13 && !quizSubmitted) {
+                nextBtn.disabled = true;
+                nextBtn.textContent = 'Complete Quiz First';
+                nextBtn.onclick = () => changeSlide(1);
+            } else if (currentSlide === totalSlides - 1) {
+                nextBtn.disabled = !emailSent;
+                nextBtn.textContent = emailSent ? 'Completed ✓' : 'Send Email to Continue';
+                nextBtn.onclick = emailSent ? () => closeTab() : null;
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.textContent = 'Next →';
+                nextBtn.onclick = () => changeSlide(1);
+            }
+            
+            document.querySelector('.slide-section').scrollTop = 0;
+        }
+
+        function changeSlide(direction) {
+            if (currentSlide === 13 && !quizSubmitted && direction > 0) {
+                return;
+            }
+            
+            currentSlide += direction;
+            if (currentSlide < 0) currentSlide = 0;
+            if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+            updateSlide();
+        }
+
+        function submitQuiz() {
+            const questions = document.querySelectorAll('.question');
+            let correct = 0;
+            const totalQuestions = questions.length;
+            const userAnswers = [];
+
+            questions.forEach((question, index) => {
+                const questionNum = `q${index + 1}`;
+                const correctAnswer = correctAnswers[questionNum];
+                const selectedInput = question.querySelector(`input[name="${questionNum}"]:checked`);
+                
+                if (!selectedInput) {
+                    userAnswers.push({ correct: false, answered: false });
+                    question.classList.add('incorrect');
+                    return;
+                }
+
+                const userAnswer = parseInt(selectedInput.value);
+                const isCorrect = userAnswer === correctAnswer;
+                
+                userAnswers.push({ 
+                    correct: isCorrect, 
+                    answered: true,
+                    userAnswer: parseInt(userAnswer),
+                    correctAnswer: parseInt(correctAnswer)
+                });
+
+                if (isCorrect) {
+                    correct++;
+                    question.classList.add('correct');
+                } else {
+                    question.classList.add('incorrect');
+                }
+            });
+
+            quizScore = correct;
+            const percentage = Math.round((correct / totalQuestions) * 100);
+            const passed = percentage >= 75;
+            quizSubmitted = true;
+
+            const resultDiv = document.getElementById('quiz-result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = passed ? 'result-box pass' : 'result-box fail';
+            resultDiv.innerHTML = `
+                <h3>${passed ? '🎉 Congratulations!' : '📚 Keep Learning'}</h3>
+                <p>You scored ${correct} out of ${totalQuestions} (${percentage}%)</p>
+                <p>${passed ? 'You passed! Click Next to see your detailed results.' : 'You need 75% to pass. Review the material and try again.'}</p>
+            `;
+
+            populateResultsPage(correct, totalQuestions, percentage, passed, userAnswers);
+
+            if (passed) {
+                nextBtn.disabled = false;
+                nextBtn.textContent = 'Next →';
+            }
+
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function populateResultsPage(correct, total, percentage, passed, userAnswers) {
+            const resultsContent = document.getElementById('results-content');
+            const resultsTitle = document.getElementById('results-title');
+            
+            resultsTitle.textContent = passed ? '🎉 Assessment Completed - PASSED!' : '📚 Assessment Completed - Review Required';
+            
+            const questionDetails = [
+                { q: 'Which command runs only development-tagged tests?', options: ['pnpm test', 'pnpm test:development', 'pnpm test --dev', 'pnpm test:quick'] },
+                { q: 'What is the correct way to create a domain helper class?', options: ['Extend TestCase', 'Implement GraphQL interface', 'Extend BaseNode', 'Create a simple class'] },
+                { q: 'Which tag should be used for tests with known intermittent failures?', options: ['@development', '@flaky', '@unstable', '@release'] },
+                { q: 'What should you always do with test data in @release tests?', options: ['Delete it after the test', 'Leave it for the next test', 'Store it in a global variable', 'Archive it in the database'] },
+                { q: 'Which environment variable enables GraphQL request/response logging?', options: ['DEBUG=true', 'PLAYWRIGHT_LOG=true', 'GRAPH_DEBUG=true', 'PLAYWRIGHT_GRAPH_LOG=true'] },
+                { q: 'What is the main benefit of using test.step()?', options: ['Faster test execution', 'Better reporting and debugging', 'Automatic data cleanup', 'Parallel execution'] },
+                { q: 'How many layers does the framework architecture have?', options: ['2', '3', '4', '5'] },
+                { q: 'Which fixture provides read-only GraphQL queries?', options: ['graph', 'graphMutation', 'graphQuery', 'graphRead'] },
+                { q: 'Tests should be:', options: ['Dependent on execution order', 'Completely independent', 'Share global state', 'Run sequentially only'] },
+                { q: 'Where should test files be organized?', options: ['All in one directory', 'By test type', 'By domain (master-data, sales, system)', 'By developer name'] },
+                { q: 'Which method in BaseNode creates a new entity with random data?', options: ['create()', 'insert()', 'add()', 'new()'] },
+                { q: 'What does PLAYWRIGHT_SKIP_LAYER_LOAD=true do?', options: ['Skips all tests', 'Skips loading test data layer for faster execution', 'Disables test reporting', 'Runs tests in debug mode'] }
+            ];
+
+            let html = `
+                <div class="result-box ${passed ? 'pass' : 'fail'}">
+                    <h3>${passed ? '✅ PASSED' : '❌ NEEDS REVIEW'}</h3>
+                    <p>Score: ${correct}/${total} (${percentage}%)</p>
+                    <p>${passed ? 'You have successfully completed the training!' : 'Please review the material and retake the assessment.'}</p>
+                </div>
+                
+                <h3 style="margin-top: 30px; color: #667eea;">Question Review</h3>
+            `;
+
+            userAnswers.forEach((answer, index) => {
+                const detail = questionDetails[index];
+                const itemClass = answer.correct ? 'correct-answer' : 'wrong-answer';
+                const icon = answer.correct ? '✅' : '❌';
+                
+                html += `
+                    <div class="review-item ${itemClass}">
+                        <p><strong>${icon} Question ${index + 1}:</strong> ${detail.q}</p>
+                        ${answer.answered ? `
+                            <p><strong>Your answer:</strong> ${detail.options[answer.userAnswer]}</p>
+                            ${!answer.correct ? `<p><strong>Correct answer:</strong> ${detail.options[answer.correctAnswer]}</p>` : ''}
+                        ` : '<p><strong>Not answered</strong></p>'}
+                    </div>
+                `;
+            });
+
+            if (passed) {
+                html += `
+                    <div style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 20px; margin-top: 30px; border-radius: 5px;">
+                        <h3 style="color: #0066cc; margin-top: 0;">📋 Complete Your Information</h3>
+                        <p>Please provide your details so we can record your completion:</p>
+                        <div style="margin: 15px 0;">
+                            <label style="display: block; margin-bottom: 8px;"><strong>Your Name:</strong></label>
+                            <input type="text" id="userName" placeholder="Enter your full name" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        </div>
+                        <div style="margin: 15px 0;">
+                            <label style="display: block; margin-bottom: 8px;"><strong>Your Email:</strong></label>
+                            <input type="email" id="userEmail" placeholder="Enter your email address" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                        </div>
+                        <button onclick="submitCompletionEmail()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1em; margin-top: 10px;">Send Completion Confirmation</button>
+                    </div>
+                    
+                    <div class="info-box" style="margin-top: 30px;">
+                        <h3 style="color: #667eea;">🎓 Next Steps</h3>
+                        <p>Now that you've completed the training, you're ready to:</p>
+                        <ul>
+                            <li>Start writing your own API tests</li>
+                            <li>Create helper classes for your domain</li>
+                            <li>Contribute to the test suite</li>
+                            <li>Share your knowledge with the team</li>
+                        </ul>
+                        <p style="text-align: center; margin-top: 20px; font-size: 1.3em;"><strong>Happy Testing! 🎭</strong></p>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="warning-box" style="margin-top: 30px;">
+                        <h3 style="color: #856404;">📖 Recommended Review</h3>
+                        <p>Consider reviewing these sections:</p>
+                        <ul>
+                            <li>Framework Architecture (Slide 3)</li>
+                            <li>Running Tests (Slide 4)</li>
+                            <li>Creating Helper Classes (Slide 6)</li>
+                            <li>Tagging Strategy (Slide 7)</li>
+                            <li>Best Practices (Slide 8)</li>
+                        </ul>
+                        <p style="margin-top: 15px;">Use the Previous button to review the material, then retake the assessment.</p>
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = html;
+        }
+
+        function submitCompletionEmail() {
+            const userName = document.getElementById('userName').value.trim();
+            const userEmail = document.getElementById('userEmail').value.trim();
+
+            if (!userName) {
+                alert('Please enter your name');
+                return;
+            }
+
+            if (!userEmail) {
+                alert('Please enter your email address');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(userEmail)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', userName);
+            formData.append('email', userEmail);
+            formData.append('score', quizScore);
+            formData.append('timestamp', new Date().toLocaleString());
+
+            fetch('https://formspree.io/f/xrbnajyj', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    alert('✅ Completion confirmation sent! Your trainer has been notified.');
+                    document.getElementById('userName').disabled = true;
+                    document.getElementById('userEmail').disabled = true;
+                    document.querySelector('button[onclick="submitCompletionEmail()"]').disabled = true;
+                    document.querySelector('button[onclick="submitCompletionEmail()"]').textContent = '✓ Sent';
+                    
+                    emailSent = true;
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = 'Completed ✓';
+                    nextBtn.onclick = closeTab;
+                } else {
+                    alert('There was an issue sending the confirmation. Please contact your trainer directly.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('There was an issue sending the confirmation. Please contact your trainer directly.');
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>
