@@ -1587,7 +1587,13 @@ DEBUG<span class="operator">=</span>pw:webserver PLAYWRIGHT_GRAPH_LOG<span class
                 nextBtn.onclick = () => changeSlide(1);
             }
             
-            document.querySelector('.slide-section').scrollTop = 0;
+            setTimeout(() => {
+                const slideSection = document.querySelector('.slide-section');
+                if (slideSection) {
+                    slideSection.scrollTop = 0;
+                }
+                window.scrollTo(0, 0);
+            }, 10);
         }
 
         function changeSlide(direction) {
