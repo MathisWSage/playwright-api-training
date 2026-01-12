@@ -1,1020 +1,758 @@
-# API Tests Training & Documentation
+# API Test Framework - Best Practices & Guidelines
 
-Welcome to the Xtrem API Testing framework! This document provides comprehensive guidance for developers and QA engineers to create, run, and maintain API tests using Playwright.
-
-## Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Framework Architecture](#framework-architecture)
-3. [Running Tests](#running-tests)
-4. [Adding New Tests](#adding-new-tests)
-5. [Creating Test Utilities](#creating-test-utilities)
-6. [Tagging Strategy](#tagging-strategy)
-7. [Example Template](#example-template)
-8. [Best Practices](#best-practices)
-9. [Troubleshooting](#troubleshooting)
+This document outlines the mandatory patterns and best practices for creating Playwright API tests in the Xtrem framework. Adherence to these guidelines ensures test scalability, reliability, and maintainability.
 
 ---
 
-## Quick Start
+## Table of Contents
+
+- [1. Getting Started](#1-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Install & First Run](#install--first-run)
+  - [Environment Variables](#environment-variables)
+- [2. Project Overview](#2-project-overview)
+  - [Architecture](#architecture)
+  - [Key Technologies](#key-technologies)
+  - [Fixtures & Layers](#fixtures--layers)
+- [3. Core Concepts](#3-core-concepts)
+  - [Core Principles](#core-principles)
+  - [Test Tagging Strategy](#test-tagging-strategy-priority)
+  - [Test Isolation](#test-isolation-priority)
+  - [Setup and Teardown](#setup-and-teardown)
+  - [Data Management](#data-management)
+  - [Async Operations](#async-operations)
+- [4. Writing Tests](#4-writing-tests)
+  - [Creating New Tests](#creating-new-tests)
+  - [Creating Test Utilities](#creating-test-utilities)
+  - [Common Patterns](#common-patterns)
+  - [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
+- [5. Running & CI](#5-running--ci)
+  - [Running Tests](#running-tests-combined)
+  - [CI/CD Integration](#cicd-integration-combined)
+  - [Performance Guidelines](#performance-guidelines)
+- [6. Troubleshooting](#6-troubleshooting-combined)
+- [7. Full Code Examples](#7-full-code-examples)
+  - [7.1 Setup and Teardown with Defensive Cleanup](#71-setup-and-teardown-with-defensive-cleanup)
+  - [7.2 Data Factory Pattern](#72-data-factory-pattern)
+  - [7.3 Async Operations – Polling with toPass](#73-async-operations--polling-with-topass)
+  - [7.4 Simple CRUD Test](#74-simple-crud-test)
+  - [7.5 Business Flow Test](#75-business-flow-test)
+  - [7.6 Negative Testing](#76-negative-testing)
+  - [7.7 Query/Filter Testing](#77-queryfilter-testing)
+- [8. Best Practices](#8-best-practices)
+- [9. Additional Resources](#9-additional-resources)
+- [10. Quick Reference Checklist](#10-quick-reference-checklist)
+
+---
+
+## 1. Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and pnpm installed
-- Project dependencies installed: `pnpm install`
-- Application running locally or ability to start it via Playwright
+- Install dependencies with pnpm
+- Application running locally or startable via Playwright
 
-### First Test Run
+### Install & First Run
 
 ```bash
-# Navigate to api-test directory
+# If using a monorepo layout
 cd services/api-test
+
+# Install dependencies
+pnpm install
 
 # Run all tests
 pnpm test
 
-# Run tests for a specific module
-pnpm test tests/master-data/
+# Quick mode (skips layer loading)
+pnpm test:quick
 
-# Run tests with specific tags
-pnpm test:development
+# Debug mode with detailed logs
+pnpm test:debug
+
+# Run only release-ready tests
+pnpm test --grep "@release"
+
+# Run only development tests
+pnpm test --grep "@development"
+
+# Exclude flaky tests (recommended for CI)
+pnpm test --grep-invert "@flaky"
+
+# Run a specific module or test file
+pnpm test tests/master-data/
+pnpm test tests/master-data/customer.spec.ts
+
+# Watch mode (local development)
+pnpm test --watch
+```
+
+If the app needs to be started manually (normally Playwright handles this via config):
+
+```bash
+# Start the application locally if Playwright doesn't auto-start it
+pnpm start
+```
+
+### Environment Variables
+
+- `PLAYWRIGHT_SKIP_LAYER_LOAD`: Skip loading the test data layer (faster local runs)
+- `PLAYWRIGHT_GRAPH_LOG`: Enable GraphQL request/response logging
+- `DEBUG`: Enable debug output (e.g., `pw:webserver`)
+- `CI`: CI mode toggles retries and worker limits
+- `PLAYWRIGHT_SHARD_TOTAL` / `PLAYWRIGHT_SHARD_CURRENT`: CI sharding controls
+
+Examples:
+
+```bash
+# POSIX
+PLAYWRIGHT_GRAPH_LOG=true PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test
+DEBUG=pw:webserver PLAYWRIGHT_GRAPH_LOG=true pnpm test
+
+# Windows PowerShell
+$env:PLAYWRIGHT_GRAPH_LOG = "true"; pnpm test
+$env:DEBUG = "pw:webserver"; pnpm test
 ```
 
 ---
 
-## Framework Architecture
+## 2. Project Overview
 
-### Overview
+### Architecture
 
 ```
 services/api-test/
-├── lib/                              # Shared utilities and helper classes
+├── lib/
 │   ├── index.ts                      # Typed test fixture export
 │   ├── functions/
 │   │   └── random.ts                 # Random data generation utilities
-│   ├── master-data/                  # Master data domain helpers
+│   ├── master-data/
 │   │   ├── business-entity.ts
 │   │   ├── customer.ts
 │   │   ├── item.ts
 │   │   ├── site.ts
 │   │   ├── supplier.ts
 │   │   └── index.ts
-│   ├── sales/                        # Sales domain helpers
+│   ├── sales/
 │   │   ├── sales-order.ts
 │   │   └── index.ts
-│   ├── system/                       # System domain helpers
+│   ├── system/
 │   │   └── index.ts
 │   └── reporters/
 │       └── error-summary-reporter.ts # Custom error reporting
-├── tests/                             # Test files organized by domain
+├── tests/
 │   ├── master-data/
-│   │   ├── customer.spec.ts
-│   │   ├── item.spec.ts
-│   │   ├── supplier.spec.ts
-│   │   ├── business-entity.spec.ts
-│   │   └── site.spec.ts
 │   ├── sales/
-│   │   └── order.spec.ts
 │   └── system/
-│       └── service-option.spec.ts
-├── playwright.config.ts              # Playwright configuration
-├── package.json                      # NPM scripts and dependencies
-├── tsconfig.json                     # TypeScript configuration
+├── playwright.config.ts
+├── package.json
+├── tsconfig.json
 └── setup.ts                          # Global setup (data layer loading)
 ```
 
 ### Key Technologies
 
-- **Playwright**: Modern testing framework with excellent API testing support
-- **TypeScript**: Full type safety for GraphQL API interactions
-- **@sage/xtrem-playwright**: Framework utilities for Xtrem-specific testing patterns
-- **@sage/xtrem-client**: Typed GraphQL client for API interaction
-- **BaseNode**: Generic class for CRUD operations on any GraphQL entity
+- Playwright: API testing support with rich tooling
+- TypeScript: Typed GraphQL interactions
+- `@sage/xtrem-playwright`: Framework utilities, fixtures, base classes
+- `@sage/xtrem-client`: Typed GraphQL client
+- BaseNode: Generic CRUD wrapper for GraphQL nodes
 
-### Architecture Layers
+### Fixtures & Layers
 
-#### 1. **Fixtures Layer** (`services/api-test/lib/index.ts`)
-
-Provides typed GraphQL fixtures with full API type safety:
+Fixtures (from lib/index.ts):
 
 ```typescript
+// Export a strongly-typed Playwright test fixture bound to the Graph API
+// This provides typed `graph` (queries) and `graphMutation` (mutations)
 export const test: XtremTestType<GraphApi> = createXtremTest<GraphApi>();
 ```
 
-**Available Fixtures:**
+- `graph`: Typed read-only GraphQL queries
+- `graphMutation`: Typed mutations/write operations
 
-- `graph`: Read-only GraphQL queries
-- `graphMutation`: GraphQL mutations and write operations
-
-#### 2. **Helper Classes Layer** (`lib/master-data/`, `lib/sales/`, etc.)
-
-Domain-specific classes extending `BaseNode` that encapsulate entity operations:
-
-```typescript
-export class CustomerClass extends BaseNode<GraphApi, Customer, CustomerInput, CustomerType> {
-    get nodeName() { return '@sage/xtrem-master-data/Customer'; }
-    get defaultSelector() { return customerSelector; }
-    async getRandomData(createData?: CustomerInput): Promise<CustomerInput> { ... }
-}
-```
-
-**Provides:**
-
-- `query()` - Retrieve entities with filters and selectors
-- `create()` - Create new entity with random data
-- `update()` - Update entity properties
-- `delete()` - Delete entity
-- `queryRandom()` - Query with automatic random data generation
-
-#### 3. **Utility Functions Layer** (`lib/functions/`)
-
-Pure functions for generating test data:
-
-```typescript
-export function randomString(length: number, charset = 'abcdefghijklmnopqrstuvwxyz'): string;
-export function randomInt(options: { min?: number; max: number; not?: number[] }): number;
-```
-
-#### 4. **Test Layer** (`tests/`)
-
-Actual test files using the fixtures and helpers:
-
-```typescript
-test('should create a customer', async ({ graph }) => {
-    const customer = await customerClass.create();
-    expect(customer._id).toBeDefined();
-});
-```
+Helper classes extend `BaseNode` and provide:
+- `query()`, `create()`, `update()`, `delete()`, `queryRandom()`
+- Strongly typed selectors and random data generation helpers
 
 ---
 
-## Running Tests
+## 3. Core Concepts
 
-### Available Commands
+### Core Principles
 
-| Command                 | Purpose                                   | Flags                                             |
-| ----------------------- | ----------------------------------------- | ------------------------------------------------- |
-| `pnpm test`             | Run all tests with standard configuration | -                                                 |
-| `pnpm test:quick`       | Skip layer loading for faster execution   | `PLAYWRIGHT_SKIP_LAYER_LOAD=true`                 |
-| `pnpm test:debug`       | Run with GraphQL logging and server logs  | `PLAYWRIGHT_GRAPH_LOG=true`, `DEBUG=pw:webserver` |
-| `pnpm test:all`         | Run with chromium project explicitly      | -                                                 |
-| `pnpm test:development` | Run only @development tagged tests        | -                                                 |
-| `pnpm test:release`     | Run only @release tagged tests            | -                                                 |
-| `pnpm test:flaky`       | Run only @flaky tagged tests              | -                                                 |
+1. Isolation: Tests run independently, in any order, any time
+2. Atomicity: Each test creates and cleans up its own data
+3. Determinism: Consistent results across environments
 
-### Running Tests Locally
+Why this matters:
+- Enables efficient parallelization and sharding
+- Prevents cascading failures
+- Reduces maintenance and debugging effort
 
-#### Step 1: Ensure Dependencies Are Installed
+### Test Tagging Strategy
+
+- `@release`: Stable, production-ready (runs in main pipeline)
+- `@development`: In progress/verification (runs in dev pipeline)
+- `@flaky`: Temporarily unstable (excluded from main pipeline; must be remediated within 1 sprint)
+
+Rules:
+- Every test must have exactly one of these tags
+- Combine suites via pipe when needed: `@development|@release`
+
+Run examples:
 
 ```bash
-cd services/api-test
+pnpm test --grep "@release"
+pnpm test --grep "@development"
+pnpm test --grep "@flaky"
+pnpm test --grep-invert "@flaky"
+```
+
+### Test Isolation
+
+Zero-shared state:
+- No reliance on other tests or pre-seeded records
+- Use unique identifiers (timestamps/UUIDs)
+- Ensure tests can run alone and in any order
+
+Self-check:
+- Runs alone with `pnpm test tests/path/to/test.spec.ts`
+- Creates all required data programmatically
+- Cleans up all created data
+- Uses unique identifiers
+
+### Setup and Teardown
+
+Mandatory cleanup pattern:
+- Defensive deletion in `afterEach`
+- Delete children before parents
+- Wrap deletions in `.catch()` and guard with `if (entity?._id)`
+- Track created IDs in test scope for reliable cleanup
+
+### Data Management
+
+- Never hard-code IDs or depend on manual seeds
+- Create all dependencies within the test or `beforeEach`
+- Prefer helper classes/factories for uniform creation
+- Increase randomness or add timestamps to avoid collisions
+
+### Async Operations
+
+Use polling only for genuinely async processes (allocations, jobs, webhooks):
+- `expect(async fn).toPass({ timeout })` with explicit timeouts
+- Poll the source of truth by reloading the entity inside the loop
+- Do not poll synchronous CRUD; assert directly
+
+Timeout guidelines:
+- Quick: ~5s
+- Standard: ~30s
+- Long-running: ~60s
+
+---
+
+## 4. Writing Tests
+
+### Creating New Tests
+
+Steps:
+1. Identify domain (master-data, sales, system)
+2. Create `.spec.ts` in the appropriate folder
+3. Use `test` fixture (`graph`/`graphMutation`) for typed calls
+4. Organize with `test.step()` for clarity
+5. Add exactly one tag: `@release`, `@development`, or `@flaky`
+
+Basic scaffold:
+
+```typescript
+// Playwright's assertion library
+import { expect } from '@playwright/test';
+// Project-specific typed test fixture that exposes Graph clients
+import { test } from '../../lib';
+// Domain entry point for master-data helpers (e.g., `Customer`, `Item`)
+import { MasterData } from '../../lib/master-data';
+
+test.describe('Partner', () => {
+  // Each test must have exactly one tag (here: @development)
+  // The fixture parameter provides typed clients: `{ graph, graphMutation }`
+  test('@development Partner CRUD operations', async ({ graph }) => {
+    // ...
+  });
+});
+```
+
+### Creating Test Utilities
+
+Recommended patterns:
+- Domain helper classes (extend `BaseNode`) for selectors + CRUD + random data
+- Pure utility helpers (date, formatting, randoms, assertions)
+- Setup fixtures for common datasets per suite
+- Assertion helpers for complex validations
+- Fluent builders for complex inputs
+
+### Common Patterns
+
+- Simple CRUD with `afterEach` cleanup
+- Business flows that create prerequisites, then clean up in reverse
+- Negative/validation tests using `rejects.toThrow`
+- Query/filter tests using selectors and filters
+
+### Anti-Patterns to Avoid
+
+- Shared global state between tests
+- Missing cleanup
+- Hard-coded dependencies (IDs, seeded data)
+- Serial tests that force order (`test.describe.serial`)
+- Missing mandatory tags
+- Polling synchronous CRUD
+
+---
+
+## 5. Running & CI
+
+### Running Tests
+
+```bash
+# Ensure dependencies
 pnpm install
-```
 
-#### Step 2: Start Services (if required)
-
-The test framework will automatically start the server via the `serverPath` configuration. For manual startup:
-
-```bash
-# From the main directory
+# Start services if required
 pnpm start
-```
 
-#### Step 3: Run Tests
-
-```bash
-# Basic run
+# Run tests
 pnpm test
 
-# Run with logging
+# With logging
 PLAYWRIGHT_GRAPH_LOG=true pnpm test
 
-# Run single file
+# Single file or directory
 pnpm test tests/master-data/customer.spec.ts
+pnpm test tests/master-data/
 
-# Run with specific tags
-pnpm test --grep @development
+# Tag-based
+pnpm test --grep "@development"
+pnpm test --grep "@release"
 
-# Run with watch mode (development)
+# Watch mode
 pnpm test --watch
+
+# Workers and sharding
+pnpm test --workers=4
+pnpm test --workers=100%
+pnpm test --shard=1/4
 ```
 
-### Running Tests in CI
+### CI/CD Integration
 
-The CI pipeline automatically:
+- Fully parallel execution (`fullyParallel: true`) for optimal distribution
+- Shard tests across agents with env vars or CLI flags
+- Retries enabled in CI for transient failures; fewer/no retries locally
+- Limit workers in CI for resource efficiency (e.g., 3)
+- Generate HTML reports; optionally capture traces only on first retry
 
-1. **Shards tests** across multiple workers using `PLAYWRIGHT_SHARD_TOTAL` and `PLAYWRIGHT_SHARD_CURRENT`
-2. **Retries failed tests** (1 retry in CI, 0 locally)
-3. **Limits workers** to 3 in CI for resource efficiency
-4. **Generates reports** in HTML format
-
-CI configuration is defined in `services/api-test/playwright.config.ts`:
-
-```typescript
-if (process.env.CI === 'true') {
-    const total = Number(process.env.PLAYWRIGHT_SHARD_TOTAL || 1);
-    const current = Number(process.env.PLAYWRIGHT_SHARD_CURRENT || 1);
-    if (total > 1) {
-        shardConfig = { total, current };
-    }
-}
-```
-
-### Environment Variables
-
-| Variable                     | Purpose                                   | Example        |
-| ---------------------------- | ----------------------------------------- | -------------- |
-| `PLAYWRIGHT_SKIP_LAYER_LOAD` | Skip loading test data layer              | `true`         |
-| `PLAYWRIGHT_GRAPH_LOG`       | Enable GraphQL request/response logging   | `true`         |
-| `DEBUG`                      | Enable debug output                       | `pw:webserver` |
-| `CI`                         | Set CI mode (affects retries and workers) | `true`         |
-
-**Usage:**
+Report merging example:
 
 ```bash
-# Multiple variables
-PLAYWRIGHT_GRAPH_LOG=true PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test
-
-# With debug output
-DEBUG=pw:webserver PLAYWRIGHT_GRAPH_LOG=true pnpm test
+npx playwright merge-reports --reporter html blob-report-*
 ```
+
+### Performance Guidelines
+
+Standard timeouts:
+
+```typescript
+const ALLOCATION_TIMEOUT = 60000;  // 60s – long-running jobs
+const STANDARD_TIMEOUT   = 30000;  // 30s – typical async
+const QUICK_TIMEOUT      = 5000;   // 5s  – quick checks
+```
+
+Optimization tips:
+- Use `test:quick` during development
+- Run specific files instead of the entire suite
+- Limit local workers (`--workers=2`)
+- Use `--grep` for subsets
+- Provision only the data you need
 
 ---
 
-## Adding New Tests
+## 6. Troubleshooting
 
-### Step 1: Identify Your Domain
+- Cannot query field: Fix selector to match GraphQL schema/types
+- "No _id to update": Create the entity or pass its ID before updating
+- Slow layer load: Use quick mode (`PLAYWRIGHT_SKIP_LAYER_LOAD=true`)
+- Passes locally, fails in CI: Examine timing, environment parity, parallel conflicts; temporarily mark `@flaky` with a remediation plan
+- Empty query result: Enable Graph logging, validate filters match created data
+- Random conflicts: Increase entropy or include timestamps
 
-Determine if your test belongs to existing domains or a new one:
+---
 
-- **master-data**: Customer, Supplier, Item, Site, BusinessEntity
-- **sales**: Orders, quotes, returns
-- **system**: System configuration, service options, feature flags
+## 7. Full Code Examples
 
-### Step 2: Create the Test File
+These examples embody isolation, defensive cleanup, factories, async polling, and common patterns.
 
-Create a new `.spec.ts` file in the appropriate domain directory:
+### 7.1 Setup and Teardown with Defensive Cleanup
 
 ```typescript
-// tests/master-data/partner.spec.ts
+// Import Playwright assertions
+import { expect } from '@playwright/test';
+// Import the typed test fixture and domain helpers
+import { test } from '../../lib';
+import { SalesOrder, SalesShipment, SalesInvoice, Customer, Site, Item } from '@lib';
+
+test.describe('Sales Order Tests (Setup & Teardown)', () => {
+  // Test-local registry of entities we create to ensure deterministic cleanup
+  const testData: {
+    customer?: any;
+    site?: any;
+    item?: any;
+    order?: any;
+    shipment?: any;
+    invoice?: any;
+  } = {};
+
+  test.beforeEach(async ({ graph }) => {
+    // Create required dependencies up-front; add randomness to avoid collisions
+    testData.customer = await new Customer(graph).create({
+      name: `Customer-${Date.now()}`,
+      email: `test-${Date.now()}@example.com`,
+      isActive: true,
+    });
+    // Create a site used by the order
+    testData.site = await new Site(graph).create({ name: `Site-${Date.now()}`, isActive: true });
+    // Create an item we'll sell on the order
+    testData.item = await new Item(graph).create({ name: `Item-${Date.now()}`, price: 100, isActive: true });
+  });
+
+  test.afterEach(async ({ graph }) => {
+    // Defensive cleanup: delete children before parents, each wrapped in catch
+    const tasks: Array<Promise<any>> = [];
+    if (testData.invoice?._id) tasks.push(new SalesInvoice(graph).delete(testData.invoice._id).catch(() => {}));
+    if (testData.shipment?._id) tasks.push(new SalesShipment(graph).delete(testData.shipment._id).catch(() => {}));
+    if (testData.order?._id) tasks.push(new SalesOrder(graph).delete(testData.order._id).catch(() => {}));
+    if (testData.item?._id) tasks.push(new Item(graph).delete(testData.item._id).catch(() => {}));
+    if (testData.site?._id) tasks.push(new Site(graph).delete(testData.site._id).catch(() => {}));
+    if (testData.customer?._id) tasks.push(new Customer(graph).delete(testData.customer._id).catch(() => {}));
+    await Promise.all(tasks);
+  });
+
+  test('@release Create sales order', async ({ graph }) => {
+    // Create an order that references our freshly-created dependencies
+    testData.order = await new SalesOrder(graph).create({
+      customer: testData.customer._id,
+      site: testData.site._id,
+      items: [{ item: testData.item._id, quantity: 5 }],
+    });
+    // Validate the order was created and wired correctly
+    expect(testData.order._id).toBeDefined();
+    expect(testData.order.customer).toBe(testData.customer._id);
+  });
+});
+```
+
+### 7.2 Data Factory Pattern
+
+```typescript
+// lib/test-utils/factories.ts
+import { Customer, Site, Item, SalesOrder } from '@lib';
+
+// Create a randomized, valid customer for tests
+export async function createTestCustomer(graph: any, overrides: Record<string, any> = {}) {
+  return new Customer(graph).create({
+    name: `Customer-${Date.now()}`,
+    email: `test-${Date.now()}@example.com`,
+    isActive: true,
+    ...overrides,
+  });
+}
+
+// Create a randomized, valid site for tests
+export async function createTestSite(graph: any, overrides: Record<string, any> = {}) {
+  return new Site(graph).create({ name: `Site-${Date.now()}`, isActive: true, ...overrides });
+}
+
+// Create a randomized, valid item for tests
+export async function createTestItem(graph: any, overrides: Record<string, any> = {}) {
+  return new Item(graph).create({ name: `Item-${Date.now()}`, price: 100, isActive: true, ...overrides });
+}
+
+// Compose an order with auto-provisioned dependencies; dependencies can be injected
+export async function createTestSalesOrder(graph: any, deps: Partial<{ customer: any; site: any; item: any }> = {}) {
+  const customer = deps.customer || await createTestCustomer(graph);
+  const site = deps.site || await createTestSite(graph);
+  const item = deps.item || await createTestItem(graph);
+
+  const order = await new SalesOrder(graph).create({
+    customer: customer._id,
+    site: site._id,
+    items: [{ item: item._id, quantity: 10 }],
+  });
+
+  // Return both the created order and the dependencies for optional cleanup
+  return { order, dependencies: { customer, site, item } };
+}
+
+// Usage in tests
 import { expect } from '@playwright/test';
 import { test } from '../../lib';
-import { MasterData } from '../../lib/master-data';
+import { createTestSalesOrder } from '../../lib/test-utils/factories';
 
-test.describe('Partner', () => {
-    test('@development Partner CRUD operations', async ({ graph }) => {
-        const partnerClass = new MasterData.Partner(graph);
-
-        // Your test steps here
-    });
+test('@release Order with factory', async ({ graph }) => {
+  // One-liner to create an order with valid dependencies
+  const { order } = await createTestSalesOrder(graph);
+  expect(order._id).toBeDefined();
 });
 ```
 
-### Step 3: Use the Fixture
-
-Access the typed GraphQL fixture:
+### 7.3 Async Operations – Polling with toPass
 
 ```typescript
-test('should query partners', async ({ graph }) => {
-    const partners = await graph.Partner.query({});
-    expect(partners).toBeDefined();
-});
-```
-
-### Step 4: Organize with Test Steps
-
-Use Playwright's `test.step()` for better reporting:
-
-```typescript
-test('should perform partner lifecycle', async ({ graph }) => {
-    let partnerId: string;
-
-    await test.step('Create a partner', async () => {
-        const result = await graph.Partner.create({
-            code: 'PARTNER-001',
-            name: 'Test Partner',
-        });
-        partnerId = result._id;
-        expect(partnerId).toBeDefined();
-    });
-
-    await test.step('Update partner', async () => {
-        const updated = await graph.Partner.update({
-            _id: partnerId,
-            name: 'Updated Partner',
-        });
-        expect(updated.name).toBe('Updated Partner');
-    });
-
-    await test.step('Delete partner', async () => {
-        await graph.Partner.delete({ _id: partnerId });
-    });
-});
-```
-
-### Step 5: Tag Your Tests
-
-Always tag your tests appropriately (see Tagging Strategy):
-
-```typescript
-test('@development Partner CRUD operations', async ({ graph }) => { ... });
-test('@release Verify partner API stability', async ({ graph }) => { ... });
-test('@flaky Partner sync operations', async ({ graph }) => { ... });
-```
-
----
-
-## Creating Test Utilities
-
-### Pattern 1: Domain Helper Class (Recommended)
-
-Extend `BaseNode` for entity-specific operations:
-
-```typescript
-// lib/master-data/partner.ts
-import { BaseNode } from '@sage/xtrem-playwright';
-import { Partner, GraphApi } from '@sage/xtrem-master-data-api';
-import { PartnerInput } from '@sage/xtrem-master-data-api-partial';
-import { randomString } from '../functions/random';
-
-const partnerSelector = {
-    _id: true,
-    id: true,
-    name: true,
-    code: true,
-    isActive: true,
-} as const;
-
-export type PartnerType = {
-    _id: string;
-    id: string;
-    name: string;
-    code: string;
-    isActive: boolean;
-};
-
-export class PartnerClass extends BaseNode<GraphApi, Partner, PartnerInput, PartnerType> {
-    get nodeName() {
-        return '@sage/xtrem-master-data/Partner' as keyof GraphApi;
-    }
-
-    get defaultSelector() {
-        return partnerSelector;
-    }
-
-    async getRandomData(createData?: PartnerInput): Promise<PartnerInput> {
-        const code = randomString(6).toUpperCase();
-        return {
-            code,
-            name: `Partner ${code}`,
-            isActive: true,
-            ...createData,
-        };
-    }
-
-    // Add custom methods for domain-specific operations
-    async queryActiveOnly() {
-        return this.query({ filter: { isActive: true } });
-    }
-
-    async createInactive() {
-        return this.create({ isActive: false });
-    }
-}
-```
-
-### Pattern 2: Pure Utility Functions
-
-For common operations across multiple entities:
-
-```typescript
-// lib/functions/date-helpers.ts
-export function getNextMonday(): Date {
-    const today = new Date();
-    const nextMonday = new Date(today);
-    nextMonday.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7));
-    return nextMonday;
-}
-
-export function formatDateForApi(date: Date): string {
-    return date.toISOString().split('T')[0];
-}
-```
-
-### Pattern 3: Setup Fixtures
-
-For common test data setup:
-
-```typescript
-// lib/functions/setup-fixtures.ts
-import { Graph } from '@sage/xtrem-client';
-import { GraphApi } from '@sage/xtrem-master-data-api';
-import { MasterData } from '../master-data';
-
-export async function setupTestPartners(graph: Graph<GraphApi>, count: number = 3) {
-    const partnerClass = new MasterData.Partner(graph);
-    const partners = [];
-
-    for (let i = 0; i < count; i++) {
-        partners.push(await partnerClass.create());
-    }
-
-    return partners;
-}
-```
-
-### Pattern 4: Assertion Helpers
-
-For complex validations:
-
-```typescript
-// lib/functions/assertions.ts
-import { expect } from '@playwright/test';
-
-export function assertPartnerValid(partner: any) {
-    expect(partner._id).toBeDefined();
-    expect(partner.code).toBeTruthy();
-    expect(partner.name).toBeTruthy();
-    expect(typeof partner.isActive).toBe('boolean');
-}
-
-export function assertPartnerExists(partners: any[], partnerId: string) {
-    const found = partners.find(p => p._id === partnerId);
-    expect(found).toBeDefined(`Partner ${partnerId} should exist`);
-}
-```
-
-### Pattern 5: Mock Data Builders
-
-For complex entity creation:
-
-```typescript
-// lib/functions/partner-builder.ts
-import { PartnerInput } from '@sage/xtrem-master-data-api-partial';
-import { randomString } from './random';
-
-export class PartnerBuilder {
-    private data: PartnerInput = {};
-
-    withCode(code: string) {
-        this.data.code = code;
-        return this;
-    }
-
-    withName(name: string) {
-        this.data.name = name;
-        return this;
-    }
-
-    withStatus(isActive: boolean) {
-        this.data.isActive = isActive;
-        return this;
-    }
-
-    build(): PartnerInput {
-        return {
-            code: randomString(6),
-            name: randomString(10),
-            isActive: true,
-            ...this.data,
-        };
-    }
-}
-
-// Usage
-const partnerData = new PartnerBuilder().withCode('CUST-001').withStatus(false).build();
-```
-
----
-
-## Tagging Strategy
-
-Tags enable selective test execution and CI/CD pipeline integration. Use meaningful tags to organize your tests:
-
-### Standard Tags
-
-#### `@development`
-
-**Use for:**
-
-- Feature development and integration testing
-- Tests that verify core functionality
-- Tests using recent/unstable APIs
-
-**Run with:** `pnpm test:development`
-
-```typescript
-test('@development Customer CRUD operations', async ({ graph }) => {
-    // Tests that verify customer creation, update, deletion
-});
-```
-
-#### `@release`
-
-**Use for:**
-
-- Stable, production-ready tests
-- Tests verifying API contracts
-- Tests that should always pass in release builds
-
-**Run with:** `pnpm test:release`
-
-```typescript
-test('@release Customer API stability', async ({ graph }) => {
-    // Tests critical for product releases
-});
-```
-
-#### `@flaky`
-
-**Use for:**
-
-- Tests known to be intermittently failing
-- Tests with external dependencies
-- Tests awaiting fixes
-
-**Run with:** `pnpm test:flaky`
-
-```typescript
-test('@flaky Partner sync operations', async ({ graph }) => {
-    // Tests that sometimes fail due to timing or external factors
-});
-```
-
-### Combining Tags
-
-Use pipe syntax to include multiple tags:
-
-```typescript
-test('@development|@release', async ({ graph }) => {
-    // Runs in both development and release suites
-});
-```
-
-### Using Tags in CI
-
-CI pipelines can target specific tag suites:
-
-```bash
-# In CI pipeline
-pnpm test --grep @release  # Only release tests
-pnpm test --grep @development  # Only development tests
-```
-
----
-
-## Example Template
-
-Use this template when creating new tests:
-
-```typescript
-/**
- * Tests for Partner entity CRUD operations
- * Domain: master-data
- * Coverage: Create, Read, Update, Delete operations
- */
 import { expect } from '@playwright/test';
 import { test } from '../../lib';
-import { MasterData } from '../../lib/master-data';
+import { SalesOrder } from '@lib';
 
-test.describe('Partner', () => {
-    // Basic CRUD test
-    test('@development Partner CRUD operations', async ({ graph }) => {
-        const partnerClass = new MasterData.Partner(graph);
-        let createdPartner: Awaited<ReturnType<typeof partnerClass.create>>;
+// Explicit timeout buckets for different async categories
+const ALLOCATION_TIMEOUT = 60000; // 60s – long-running async
+const STANDARD_TIMEOUT = 30000;   // 30s – typical async
+const QUICK_TIMEOUT = 5000;       // 5s  – status checks
 
-        // CREATE
-        await test.step('Create a partner', async () => {
-            createdPartner = await partnerClass.create();
-            expect(createdPartner).toBeDefined();
-            expect(createdPartner._id).toBeDefined();
-            expect(createdPartner.code).toBeTruthy();
-        });
+test('@release Verify allocation', async ({ graph }) => {
+  // Create and confirm an order, then poll the source of truth
+  const orders = new SalesOrder(graph);
+  const order = await orders.create({ /* deps provisioned in beforeEach */ });
+  await orders.confirm(order._id);
 
-        // READ
-        await test.step('Query the created partner', async () => {
-            const queried = await partnerClass.query({
-                filter: { _id: createdPartner._id },
-            });
-            expect(queried.length).toBe(1);
-            expect(queried[0].code).toBe(createdPartner.code);
-        });
+  // Poll using expect(...).toPass with a clear timeout; re-read the entity
+  await expect(async () => {
+    const refreshed = await orders.get(order._id);
+    expect(refreshed.allocatedQuantity).toBeGreaterThan(0);
+  }).toPass({ timeout: ALLOCATION_TIMEOUT });
+});
 
-        // UPDATE
-        await test.step('Update partner properties', async () => {
-            const updated = await partnerClass.update({
-                _id: createdPartner._id,
-                name: 'Updated Partner Name',
-            });
-            expect(updated.name).toBe('Updated Partner Name');
-        });
-
-        // DELETE
-        await test.step('Delete the partner', async () => {
-            await partnerClass.delete({ _id: createdPartner._id });
-            const deleted = await partnerClass.query({
-                filter: { _id: createdPartner._id },
-            });
-            expect(deleted.length).toBe(0);
-        });
-    });
-
-    // Filtered query test
-    test('@development Query partners with filters', async ({ graph }) => {
-        const partnerClass = new MasterData.Partner(graph);
-
-        await test.step('Create multiple partners', async () => {
-            await partnerClass.create();
-            await partnerClass.create({ isActive: false });
-        });
-
-        await test.step('Query only active partners', async () => {
-            const active = await partnerClass.query({
-                filter: { isActive: true },
-            });
-            expect(active.length).toBeGreaterThan(0);
-            expect(active.every(p => p.isActive)).toBe(true);
-        });
-    });
-
-    // Complex scenario test
-    test('@release Partner lifecycle with relationships', async ({ graph }) => {
-        const partnerClass = new MasterData.Partner(graph);
-        const siteClass = new MasterData.Site(graph);
-
-        await test.step('Setup: Create partner and site', async () => {
-            // Test setup logic
-        });
-
-        await test.step('Associate partner with site', async () => {
-            // Association logic
-        });
-
-        await test.step('Verify associations persisted', async () => {
-            // Verification logic
-        });
-    });
-
-    // Edge case test
-    test('@flaky Partner with special characters', async ({ graph }) => {
-        const partnerClass = new MasterData.Partner(graph);
-
-        await test.step('Create partner with special characters', async () => {
-            const special = await partnerClass.create({
-                name: 'Partner & Co. (Special) [Test]',
-            });
-            expect(special.name).toContain('&');
-        });
-    });
+test('@release CRUD remains synchronous', async ({ graph }) => {
+  // For synchronous operations, assert directly without polling
+  const orders = new SalesOrder(graph);
+  const order = await orders.create({ /* deps provisioned in beforeEach */ });
+  const updated = await orders.update(order._id, { comment: 'Updated' });
+  expect(updated.comment).toBe('Updated');
 });
 ```
 
----
-
-## Best Practices
-
-### 1. **Test Independence**
-
-Each test should be completely independent and not rely on other tests:
+### 7.4 Simple CRUD Test
 
 ```typescript
-// ✅ GOOD - Each test creates its own data
-test('@development Create customer A', async ({ graph }) => {
-    const customer = await graph.Customer.create({ name: 'Customer A' });
-    expect(customer._id).toBeDefined();
-});
+import { expect } from '@playwright/test';
+import { test } from '../../lib';
+import { Customer } from '@lib';
 
-test('@development Create customer B', async ({ graph }) => {
-    const customer = await graph.Customer.create({ name: 'Customer B' });
-    expect(customer._id).toBeDefined();
-});
+test.describe('Customer CRUD Operations', () => {
+  // Store the created entity per-test for cleanup
+  let created: any;
 
-// ❌ BAD - Test B depends on Test A
-test('@development Create customer', async ({ graph }) => {
-    global.customerId = await graph.Customer.create();
-});
-
-test('@development Update customer', async ({ graph }) => {
-    // Depends on customerId from previous test!
-    await graph.Customer.update({ _id: global.customerId });
-});
-```
-
-### 2. **Use Test Steps for Organization**
-
-Break tests into logical steps for better reporting and debugging:
-
-```typescript
-// ✅ GOOD
-test('@development Order workflow', async ({ graph }) => {
-    let orderId: string;
-
-    await test.step('Create order', async () => {
-        const order = await graph.Order.create();
-        orderId = order._id;
-    });
-
-    await test.step('Add items to order', async () => {
-        await graph.OrderItem.create({ orderId });
-    });
-
-    await test.step('Submit order', async () => {
-        await graph.Order.submit({ _id: orderId });
-    });
-});
-
-// ❌ POOR - No step organization
-test('@development Order workflow', async ({ graph }) => {
-    const order = await graph.Order.create();
-    await graph.OrderItem.create({ orderId: order._id });
-    await graph.Order.submit({ _id: order._id });
-});
-```
-
-### 3. **Meaningful Assertions**
-
-Use clear assertions with helpful messages:
-
-```typescript
-// ✅ GOOD
-test('@development Verify customer creation', async ({ graph }) => {
-    const customer = await graph.Customer.create();
-
-    expect(customer._id, 'Customer ID should be generated').toBeDefined();
-    expect(customer.code, 'Customer code should be set').toBeTruthy();
-    expect(customer.isActive, 'Customer should be active by default').toBe(true);
-});
-
-// ❌ POOR - Generic assertions
-test('@development Create customer', async ({ graph }) => {
-    const customer = await graph.Customer.create();
-    expect(customer).toBeDefined();
-    expect(customer._id).toBeDefined();
-});
-```
-
-### 4. **Leverage Helper Classes**
-
-Use domain helper classes instead of raw graph queries:
-
-```typescript
-// ✅ GOOD
-test('@development Customer operations', async ({ graph }) => {
-    const customerClass = new MasterData.Customer(graph);
-    const customer = await customerClass.create();
-    expect(customer._id).toBeDefined();
-});
-
-// ❌ POOR - Direct graph manipulation
-test('@development Customer operations', async ({ graph }) => {
-    const customer = await graph.Customer.query({});
-    // Manually managing selectors and filters
-});
-```
-
-### 5. **Clean Up Test Data**
-
-Always delete created test data, especially for @release tests:
-
-```typescript
-// ✅ GOOD
-test('@release Customer operations', async ({ graph }) => {
-    const customerClass = new MasterData.Customer(graph);
-    const customer = await customerClass.create();
-
-    try {
-        expect(customer._id).toBeDefined();
-    } finally {
-        // Cleanup happens even if test fails
-        await customerClass.delete({ _id: customer._id });
+  test.afterEach(async ({ graph }) => {
+    // Defensive delete: guard existence and catch errors
+    if (created?._id) {
+      await new Customer(graph).delete(created._id).catch(() => {});
+      created = null;
     }
-});
+  });
 
-// ❌ POOR - No cleanup
-test('@release Customer operations', async ({ graph }) => {
-    const customer = await graph.Customer.create();
-    expect(customer._id).toBeDefined();
-    // Test data left behind!
-});
-```
-
-### 6. **Use Appropriate Test Tags**
-
-Tag tests according to their stability and lifecycle:
-
-```typescript
-// ✅ GOOD - Clear intent
-test('@development Experimental feature', async ({ graph }) => { ... });
-test('@release Core API contract', async ({ graph }) => { ... });
-test('@flaky Sync operations with timeout', async ({ graph }) => { ... });
-
-// ❌ POOR - Unclear tags
-test('Feature test', async ({ graph }) => { ... });
-test('Verify API', async ({ graph }) => { ... });
-```
-
-### 7. **Handle Random Data Properly**
-
-Store generated IDs for later queries:
-
-```typescript
-// ✅ GOOD
-test('@development Query created customer', async ({ graph }) => {
-    const customerClass = new MasterData.Customer(graph);
-    const created = await customerClass.create();
-    const customerId = created._id;
-
-    const queried = await customerClass.query({
-        filter: { _id: customerId },
+  test('@release Create customer with valid data', async ({ graph }) => {
+    // Create a valid customer and assert key fields
+    created = await new Customer(graph).create({
+      name: `Customer-${Date.now()}`,
+      email: `test-${Date.now()}@example.com`,
+      isActive: true,
     });
-    expect(queried[0]._id).toBe(customerId);
+    expect(created._id).toBeDefined();
+    expect(created.email).toContain('@example.com');
+  });
+
+  test('@release Update customer name', async ({ graph }) => {
+    // Update a field and validate the result is persisted
+    created = await new Customer(graph).create({ name: `C-${Date.now()}`, email: `t-${Date.now()}@example.com` });
+    const updated = await new Customer(graph).update(created._id, { name: 'Updated Name' });
+    expect(updated.name).toBe('Updated Name');
+  });
+
+  test('@release Delete customer', async ({ graph }) => {
+    // Delete and rely on afterEach to avoid orphaned state
+    created = await new Customer(graph).create({ name: `C-${Date.now()}`, email: `t-${Date.now()}@example.com` });
+    await new Customer(graph).delete(created._id);
+    created = null;
+  });
 });
-
-// ❌ POOR - Assume specific data exists
-test('@development Query customer', async ({ graph }) => {
-    const customers = await graph.Customer.query({});
-    expect(customers.length).toBeGreaterThan(0);
-});
 ```
 
-### 8. **Organize Tests by Domain**
-
-Keep related tests together and organized:
-
-```
-tests/
-├── master-data/         # Master data entities
-│   ├── customer.spec.ts
-│   ├── supplier.spec.ts
-│   └── item.spec.ts
-├── sales/              # Sales transactions
-│   ├── order.spec.ts
-│   └── quote.spec.ts
-└── system/             # System configuration
-    └── service-option.spec.ts
-```
-
----
-
-## Troubleshooting
-
-### Issue: Tests Fail with "Cannot query field"
-
-**Cause**: GraphQL selector doesn't match the API schema.
-
-**Solution**:
-
-1. Verify the field exists in the GraphQL API definition
-2. Check TypeScript types for correct field names
-3. Update the selector in your helper class
+### 7.5 Business Flow Test
 
 ```typescript
-// ✅ CORRECT
-const selector = {
-    _id: true,
-    code: true,
-    isActive: true,
-};
+import { expect } from '@playwright/test';
+import { test } from '../../lib';
+import { SalesOrder, SalesShipment, SalesInvoice, Customer, Site, Item } from '@lib';
 
-// ❌ WRONG - Field doesn't exist
-const selector = {
-    _id: true,
-    customField: true, // This field doesn't exist!
-};
-```
+test.describe('Sales Business Flow', () => {
+  // Track all created entities to clean up in reverse order
+  const testData: { customer?: any; site?: any; item?: any; order?: any; shipment?: any; invoice?: any } = {};
 
-### Issue: "No \_id to update" Error
+  test.beforeEach(async ({ graph }) => {
+    // Minimal prerequisite provisioning for the flow
+    testData.customer = await new Customer(graph).create({ name: `Cust-${Date.now()}`, email: `t-${Date.now()}@example.com` });
+    testData.site = await new Site(graph).create({ name: `Site-${Date.now()}` });
+    testData.item = await new Item(graph).create({ name: `Item-${Date.now()}`, price: 10 });
+  });
 
-**Cause**: Attempting to update without an entity ID.
+  test.afterEach(async ({ graph }) => {
+    // Cleanup pipeline: children first, each deletion guarded
+    const cleaners: Array<Promise<any>> = [];
+    if (testData.invoice?._id) cleaners.push(new SalesInvoice(graph).delete(testData.invoice._id).catch(() => {}));
+    if (testData.shipment?._id) cleaners.push(new SalesShipment(graph).delete(testData.shipment._id).catch(() => {}));
+    if (testData.order?._id) cleaners.push(new SalesOrder(graph).delete(testData.order._id).catch(() => {}));
+    if (testData.item?._id) cleaners.push(new Item(graph).delete(testData.item._id).catch(() => {}));
+    if (testData.site?._id) cleaners.push(new Site(graph).delete(testData.site._id).catch(() => {}));
+    if (testData.customer?._id) cleaners.push(new Customer(graph).delete(testData.customer._id).catch(() => {}));
+    await Promise.all(cleaners);
+  });
 
-**Solution**: Ensure entity is created or ID is provided:
+  test('@release Complete flow: Order → Ship → Invoice', async ({ graph }) => {
+    // Create order, then ship and invoice it; validate the end result
+    const orders = new SalesOrder(graph);
+    const shipments = new SalesShipment(graph);
+    const invoices = new SalesInvoice(graph);
 
-```typescript
-// ✅ CORRECT
-const customer = await customerClass.create();
-await customerClass.update({ name: 'New Name' }); // Uses created entity
-
-// ❌ WRONG - No entity created
-const customerClass = new MasterData.Customer(graph);
-await customerClass.update({ name: 'New Name' }); // No ID!
-```
-
-### Issue: Layer Load Takes Too Long
-
-**Cause**: Test data layer loading from database.
-
-**Solution**: Use quick mode for development:
-
-```bash
-PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test
-```
-
-**Note**: Only skip layer load if test data already exists.
-
-### Issue: Tests Pass Locally but Fail in CI
-
-**Cause**: Timing issues, parallel test conflicts, or environment differences.
-
-**Solutions**:
-
-1. **Increase timeouts** for slow operations:
-
-    ```typescript
-    test.setTimeout(60000); // 60 seconds
-    ```
-
-2. **Mark as flaky** if intermittent:
-
-    ```typescript
-    test('@flaky Slow operation', async ({ graph }) => { ... });
-    ```
-
-3. **Check environment variables** in CI:
-    ```bash
-    PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test  # Local test
-    # vs CI configuration
-    ```
-
-### Issue: GraphQL Query Returns Empty
-
-**Cause**: Querying with incorrect filter or data doesn't exist.
-
-**Solution**:
-
-1. Enable GraphQL logging:
-
-    ```bash
-    PLAYWRIGHT_GRAPH_LOG=true pnpm test
-    ```
-
-2. Check filters match your created data:
-    ```typescript
-    const customer = await customerClass.create({ code: 'CUST-001' });
-    const found = await customerClass.query({
-        filter: { code: 'CUST-001' }, // Match what you created
+    testData.order = await orders.create({
+      customer: testData.customer._id,
+      site: testData.site._id,
+      items: [{ item: testData.item._id, quantity: 3 }],
     });
-    ```
 
-### Issue: Random Data Conflicts
+    testData.shipment = await shipments.create({ order: testData.order._id });
+    testData.invoice = await invoices.create({ order: testData.order._id });
 
-**Cause**: Random string generation creates duplicates.
+    expect(testData.invoice._id).toBeDefined();
+  });
+});
+```
 
-**Solution**: Extend random string length or use timestamps:
+### 7.6 Negative Testing
 
 ```typescript
-// In lib/functions/random.ts
-export function randomString(length: number = 12, charset = 'abcdefghijklmnopqrstuvwxyz0123456789') {
-    let res = '';
-    while (length) {
-        length--;
-        res += charset[(unsafeRandom() * charset.length) | 0];
+import { expect } from '@playwright/test';
+import { test } from '../../lib';
+import { SalesOrder, Customer } from '@lib';
+
+test.describe('Sales Order Validation', () => {
+  // A valid customer used in negative scenarios
+  let testCustomer: any;
+
+  test.beforeEach(async ({ graph }) => {
+    testCustomer = await new Customer(graph).create({ name: `Cust-${Date.now()}`, email: `t-${Date.now()}@example.com` });
+  });
+
+  test.afterEach(async ({ graph }) => {
+    // Defensive cleanup for the seeded customer
+    if (testCustomer?._id) await new Customer(graph).delete(testCustomer._id).catch(() => {});
+  });
+
+  test('@release Reject order with negative quantity', async ({ graph }) => {
+    // Expect the create call to throw due to invalid quantity
+    await expect(async () => {
+      await new SalesOrder(graph).create({ customer: testCustomer._id, items: [{ item: 'invalid', quantity: -1 }] });
+    }).rejects.toThrow(/quantity must be positive/i);
+  });
+
+  test('@release Reject order without customer', async ({ graph }) => {
+    // Missing required `customer` should produce a validation error
+    await expect(async () => {
+      await new SalesOrder(graph).create({ items: [{ item: 'x', quantity: 1 }] });
+    }).rejects.toThrow(/customer is required/i);
+  });
+
+  test('@release Reject order with invalid item', async ({ graph }) => {
+    // Invalid item reference should fail
+    await expect(async () => {
+      await new SalesOrder(graph).create({ customer: testCustomer._id, items: [{ item: '#DOES_NOT_EXIST', quantity: 1 }] });
+    }).rejects.toThrow(/item not found/i);
+  });
+});
+```
+
+### 7.7 Query/Filter Testing
+
+```typescript
+import { expect } from '@playwright/test';
+import { test } from '../../lib';
+import { Item } from '@lib';
+
+test.describe('Item Master Data Query', () => {
+  // Keep references to created items for cleanup after each test
+  const createdItems: any[] = [];
+
+  test.beforeEach(async ({ graph }) => {
+    // Seed a small variety of items for filter-based queries
+    const items = [
+      { name: `A-${Date.now()}`, price: 10, isActive: true },
+      { name: `B-${Date.now()}`, price: 50, isActive: false },
+      { name: `C-${Date.now()}`, price: 100, isActive: true },
+    ];
+    for (const data of items) createdItems.push(await new Item(graph).create(data));
+  });
+
+  test.afterEach(async ({ graph }) => {
+    // Clean all created items; use splice to consume the array
+    for (const i of createdItems.splice(0)) await new Item(graph).delete(i._id).catch(() => {});
+  });
+
+  test('@release Query items with filters', async ({ graph }) => {
+    // Query with combined filters and a selector to limit returned fields
+    const items = await new Item(graph).query({
+      filter: { isActive: { eq: true }, price: { gte: 50 } },
+      selector: { _id: true, name: true, price: true, isActive: true },
+      limit: 100,
+    });
+    // Validate all results match the filter criteria
+    expect(items.length).toBeGreaterThan(0);
+    for (const it of items) {
+      expect(it.isActive).toBe(true);
+      expect(it.price).toBeGreaterThanOrEqual(50);
     }
-    return res;
-}
-
-// Or use timestamps
-export function uniqueCode(): string {
-    return `CODE-${Date.now()}-${randomInt({ max: 1000 })}`;
-}
+  });
+});
 ```
 
 ---
 
-## Additional Resources
+## 8. Best Practices
 
-### Internal Documentation
-
-- **Playwright Documentation**: https://playwright.dev/docs/api-testing
-- **@sage/xtrem-playwright**: Framework utilities and fixtures
-- **@sage/xtrem-client**: GraphQL client and type definitions
-- **BaseNode Implementation**: Located in `platform/testing/xtrem-playwright/lib/base-node.ts`
-
-### Running Tests Quick Reference
-
-| Scenario               | Command                                                  |
-| ---------------------- | -------------------------------------------------------- |
-| All tests              | `pnpm test`                                              |
-| Development tests only | `pnpm test:development`                                  |
-| Release tests only     | `pnpm test:release`                                      |
-| Specific test file     | `pnpm test tests/master-data/customer.spec.ts`           |
-| Watch mode             | `pnpm test --watch`                                      |
-| With GraphQL logs      | `PLAYWRIGHT_GRAPH_LOG=true pnpm test`                    |
-| Skip layer load        | `PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test`              |
-| With debugging         | `DEBUG=pw:webserver PLAYWRIGHT_GRAPH_LOG=true pnpm test` |
-
-### File Structure Quick Reference
-
-- **Write tests**: `tests/[domain]/[feature].spec.ts`
-- **Create helpers**: `lib/[domain]/[entity].ts`
-- **Pure functions**: `lib/functions/[utility].ts`
-- **Share fixtures**: Update `services/api-test/lib/index.ts`
+- Test independence: no shared state; own data lifecycle
+- Use `test.step()` to structure complex flows
+- Write meaningful assertions with clear messages
+- Prefer domain helper classes over raw graph calls
+- Always clean up created data (especially for `@release`)
+- Use appropriate tags to control CI behavior
+- Handle random data properly; store IDs for follow-up queries
+- Organize tests by business domain
 
 ---
 
-## Getting Help
+## 9. Additional Resources
 
-1. **Check existing tests** - Review `services/api-test/tests/master-data/customer.spec.ts` for examples
-2. **Review helpers** - See how `BaseNode` is used in `lib/master-data/*.ts`
-3. **Debug with logs** - Use `PLAYWRIGHT_GRAPH_LOG=true` environment variable
-4. **Consult framework docs** - See `@sage/xtrem-playwright` documentation
-5. **Ask the team** - Schedule knowledge-sharing sessions on API testing patterns
+- Playwright Docs (API Testing): https://playwright.dev/docs/api-testing
+- `@sage/xtrem-playwright`: Framework utilities and fixtures
+- `@sage/xtrem-client`: GraphQL client and types
+- BaseNode reference: typically `platform/testing/xtrem-playwright/lib/base-node.ts`
+
+---
+
+## 10. Quick Reference Checklist
+
+- [ ] Exactly one tag: `@release`, `@development`, or `@flaky`
+- [ ] Programmatically creates all required data
+- [ ] `afterEach` performs defensive cleanup in reverse order
+- [ ] Cleanup guards existence and catches errors
+- [ ] No hard-coded IDs or seeded dependencies
+- [ ] Runs independently in isolation
+- [ ] Uses unique identifiers (timestamps/UUIDs)
+- [ ] Async uses `toPass()` with explicit timeouts (only when truly async)
+- [ ] Naming: `@tag Description`
+- [ ] Deletes children first, then parents
