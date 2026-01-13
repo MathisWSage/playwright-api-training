@@ -72,13 +72,13 @@ pnpm test:quick
 pnpm test:debug
 
 # Run only release-ready tests
-pnpm test --grep "@release"
+pnpm test:release
 
 # Run only development tests
-pnpm test --grep "@development"
+pnpm test:development
 
-# Exclude flaky tests (recommended for CI)
-pnpm test --grep-invert "@flaky"
+# Run only flaky tests
+pnpm test:flaky
 
 # Run a specific module or test file
 pnpm test tests/master-data/
@@ -204,10 +204,9 @@ Rules:
 Run examples:
 
 ```bash
-pnpm test --grep "@release"
-pnpm test --grep "@development"
-pnpm test --grep "@flaky"
-pnpm test --grep-invert "@flaky"
+pnpm test:release
+pnpm test:development
+pnpm test:flaky
 ```
 
 ### Test Isolation
@@ -331,16 +330,12 @@ pnpm test tests/master-data/customer.spec.ts
 pnpm test tests/master-data/
 
 # Tag-based
-pnpm test --grep "@development"
-pnpm test --grep "@release"
+pnpm test:development
+pnpm test:release
+pnpm test:flaky
 
 # Watch mode
 pnpm test --watch
-
-# Workers and sharding
-pnpm test --workers=4
-pnpm test --workers=100%
-pnpm test --shard=1/4
 ```
 
 ### CI/CD Integration
