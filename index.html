@@ -685,14 +685,14 @@ test.<span class="function">describe</span>(<span class="string">'Customer'</spa
                     </div>
 
                     <h3>Usage Examples</h3>
-                    <div class="code-block"><span class="comment">// Single tag</span>
+                    <div class="code-block"><span class="comment">// Development test</span>
 test(<span class="string">'@development Customer creation'</span>, <span class="keyword">async</span> ({ graph }) => {
-    <span class="comment">// Development test code</span>
+    <span class="comment">// Test in development</span>
 });
 
-<span class="comment">// Multiple tags using pipe syntax</span>
-test(<span class="string">'@development|@release Core API'</span>, <span class="keyword">async</span> ({ graph }) => {
-    <span class="comment">// Runs in both suites</span>
+<span class="comment">// Release test</span>
+test(<span class="string">'@release Core API validation'</span>, <span class="keyword">async</span> ({ graph }) => {
+    <span class="comment">// Stable production test</span>
 });
 
 <span class="comment">// Run specific tags</span>

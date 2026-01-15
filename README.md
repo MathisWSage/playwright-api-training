@@ -199,7 +199,7 @@ Why this matters:
 
 Rules:
 - Every test must have exactly one of these tags
-- Combine suites via pipe when needed: `@development|@release`
+- A test should only have one of the tags @release, @development or @flaky at any point
 
 Run examples:
 
