@@ -492,14 +492,17 @@
 <span class="comment"># Install dependencies</span>
 <span class="keyword">pnpm</span> install
 
+<span class="comment"># Build the project</span>
+<span class="keyword">pnpm</span> build
+
 <span class="comment"># Run all tests</span>
-<span class="keyword">pnpm</span> test
+<span class="keyword">npx</span> playwright test tests/
 
 <span class="comment"># Run specific test module</span>
-<span class="keyword">pnpm</span> test tests/master-data/
+<span class="keyword">npx</span> playwright test tests/master-data/
 
 <span class="comment"># Run with specific tags</span>
-<span class="keyword">pnpm</span> test:development
+<span class="keyword">pnpm</span> test --grep=@development
 </div>
 
                     <div class="info-box">
@@ -547,26 +550,47 @@ services/api-test/
                     <h2>▶️ Running Tests Effectively</h2>
                     
                     <h3>Essential Test Commands</h3>
-                    <div class="code-block"><span class="comment"># Standard test run</span>
-<span class="keyword">pnpm</span> test
+                    <div class="code-block"><span class="comment"># Build the project</span>
+<span class="keyword">pnpm</span> build
 
-<span class="comment"># Quick run (skip layer loading)</span>
-<span class="keyword">pnpm</span> test:quick
+<span class="comment"># Type check</span>
+<span class="keyword">pnpm</span> typecheck
 
-<span class="comment"># Debug mode with logging</span>
-<span class="keyword">pnpm</span> test:debug
+<span class="comment"># Run all tests</span>
+<span class="keyword">npx</span> playwright test tests/
 
-<span class="comment"># Run only development tests</span>
-<span class="keyword">pnpm</span> test:development
+<span class="comment"># Debug mode with server logging</span>
+<span class="keyword">PLAYWRIGHT_SERVER_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+
+<span class="comment"># Quick mode (skip layer loading)</span>
+<span class="keyword">PLAYWRIGHT_SKIP_LAYER_LOAD</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
 
 <span class="comment"># Run only release tests</span>
-<span class="keyword">pnpm</span> test:release
+<span class="keyword">pnpm</span> test --grep=@release
+
+<span class="comment"># Run only development tests</span>
+<span class="keyword">pnpm</span> test --grep=@development
+
+<span class="comment"># Run only flaky tests</span>
+<span class="keyword">pnpm</span> test --grep=@flaky
+
+<span class="comment"># Run all tests on chromium</span>
+<span class="keyword">pnpm</span> test --project=chromium
+
+<span class="comment"># Run API tests with custom timeout</span>
+<span class="keyword">PLAYWRIGHT_SERVER_TIMEOUT</span>=<span class="number">300000</span> <span class="keyword">xtrem</span> test --api
+
+<span class="comment"># Run remote tests</span>
+./scripts/test-remote.sh
+
+<span class="comment"># Run tests without server</span>
+<span class="keyword">START_SERVER</span>=<span class="keyword">false</span> <span class="keyword">xtrem</span> test --api
 
 <span class="comment"># Run specific file</span>
-<span class="keyword">pnpm</span> test tests/master-data/customer.spec.ts
+<span class="keyword">npx</span> playwright test tests/master-data/customer.spec.ts
 
 <span class="comment"># Watch mode for development</span>
-<span class="keyword">pnpm</span> test --watch
+<span class="keyword">npx</span> playwright test --watch
 </div>
 
                     <h3>Important Environment Variables</h3>
@@ -700,6 +724,46 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
 </div>
                 </div>
 
+                <!-- Slide 7.5: CI/CD Pipeline Integration -->
+                <div class="slide" data-avatar="The framework includes Azure DevOps pipeline templates for automated testing. Let me show you how tests run in CI/CD!">
+                    <h2>🔄 CI/CD Pipeline Integration</h2>
+                    
+                    <h3>Pipeline Architecture</h3>
+                    <p>The testing framework includes Azure DevOps YAML pipeline templates for seamless CI/CD integration:</p>
+                    
+                    <div class="layer">
+                        <strong>template-run-api-playwright.yml</strong><br>
+                        Main pipeline for running Playwright API tests with full environment provisioning, parallel execution, and configurable test scopes.
+                    </div>
+
+                    <div class="layer">
+                        <strong>template-jira-playwright.yml</strong><br>
+                        Test result reporting pipeline that downloads and parses Playwright test results for detailed execution summaries.
+                    </div>
+
+                    <h3>Key Pipeline Features</h3>
+                    <ul>
+                        <li><strong>Automated Environment Setup:</strong> Handles tenant provisioning and cleanup</li>
+                        <li><strong>Tag-Based Execution:</strong> Configure via PLAYWRIGHT_GREP parameter (@development, @release, @flaky)</li>
+                        <li><strong>Parallel Testing:</strong> Configurable worker instances for faster execution</li>
+                        <li><strong>Multiple Cluster Support:</strong> Test across different environments and configurations</li>
+                        <li><strong>Authentication Handling:</strong> Secure and unsecure auth methods</li>
+                        <li><strong>Result Reporting:</strong> Comprehensive test result parsing and reporting</li>
+                    </ul>
+
+                    <h3>Pipeline Configuration Parameters</h3>
+                    <div class="code-block"><span class="comment"># Key parameters for pipeline execution</span>
+<span class="keyword">PLAYWRIGHT_GREP</span>: <span class="string">'@development'</span>      <span class="comment"># Filter tests by tag</span>
+<span class="keyword">XTREM_TEST_MAX_INSTANCES</span>: <span class="number">1</span>          <span class="comment"># Parallel worker count</span>
+<span class="keyword">TARGET_URL</span>: <span class="string">'https://...'</span>           <span class="comment"># Target environment</span>
+<span class="keyword">TENANT_PROVISIONING_METHOD</span>: <span class="string">'static'</span> <span class="comment"># Tenant creation method</span>
+</div>
+
+                    <div class="info-box">
+                        <strong>💡 CI Best Practice:</strong> Use fully parallel execution with appropriate worker limits. Tests are designed for isolation and can run concurrently for faster feedback.
+                    </div>
+                </div>
+
                 <!-- Slide 8: Best Practices -->
                 <div class="slide" data-avatar="Following best practices ensures maintainable, reliable tests. These guidelines come from real-world experience!">
                     <h2>✅ Best Practices</h2>
@@ -751,11 +815,11 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     <div class="code-block"><span class="comment"># Enable GraphQL logging</span>
 <span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
 
-<span class="comment"># Full debug mode</span>
-<span class="keyword">DEBUG</span>=pw:webserver <span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+<span class="comment"># Full debug mode with server logging</span>
+<span class="keyword">PLAYWRIGHT_SERVER_LOG</span>=<span class="keyword">true</span> <span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
 
 <span class="comment"># Run single test with verbose output</span>
-<span class="keyword">pnpm</span> test tests/master-data/customer.spec.ts --debug
+<span class="keyword">npx</span> playwright test tests/master-data/customer.spec.ts --debug
 </div>
                 </div>
 
@@ -775,16 +839,24 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     </ul>
 
                     <h3>Quick Reference Commands</h3>
-                    <div class="code-block"><span class="comment"># Development workflow</span>
-<span class="keyword">pnpm</span> test:development          <span class="comment"># Run dev tests</span>
-<span class="keyword">pnpm</span> test --watch             <span class="comment"># Watch mode</span>
+                    <div class="code-block"><span class="comment"># Build and type check</span>
+<span class="keyword">pnpm</span> build
+<span class="keyword">pnpm</span> typecheck
+
+<span class="comment"># Development workflow</span>
+<span class="keyword">pnpm</span> test --grep=@development  <span class="comment"># Run dev tests</span>
+<span class="keyword">npx</span> playwright test --watch   <span class="comment"># Watch mode</span>
 
 <span class="comment"># Production verification</span>
-<span class="keyword">pnpm</span> test:release             <span class="comment"># Run release tests</span>
+<span class="keyword">pnpm</span> test --grep=@release      <span class="comment"># Run release tests</span>
+
+<span class="comment"># API testing</span>
+<span class="keyword">PLAYWRIGHT_SERVER_TIMEOUT</span>=<span class="number">300000</span> <span class="keyword">xtrem</span> test --api
 
 <span class="comment"># Debugging</span>
 <span class="keyword">PLAYWRIGHT_GRAPH_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
 <span class="keyword">PLAYWRIGHT_SKIP_LAYER_LOAD</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
+<span class="keyword">PLAYWRIGHT_SERVER_LOG</span>=<span class="keyword">true</span> <span class="keyword">pnpm</span> test
 </div>
 
                     <div class="info-box">
@@ -805,7 +877,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                         <ul>
                             <li>Detailed framework architecture with complete directory structure</li>
                             <li>Advanced helper class patterns and utilities</li>
-                            <li>Complete CI/CD configuration details</li>
+                            <li>Azure DevOps pipeline templates and CI/CD integration details</li>
                             <li>Extended troubleshooting guide with solutions</li>
                             <li>Comprehensive example templates</li>
                             <li>Additional best practices and patterns</li>
@@ -832,10 +904,10 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     <div id="quiz-container">
                         <div class="question">
                             <p><strong>1. Which command runs only development-tagged tests?</strong></p>
-                            <label><input type="radio" name="q1" value="0"> pnpm test</label>
-                            <label><input type="radio" name="q1" value="1"> pnpm test:development</label>
+                            <label><input type="radio" name="q1" value="0"> npx playwright test tests/</label>
+                            <label><input type="radio" name="q1" value="1"> pnpm test --grep=@development</label>
                             <label><input type="radio" name="q1" value="2"> pnpm test --dev</label>
-                            <label><input type="radio" name="q1" value="3"> pnpm test:quick</label>
+                            <label><input type="radio" name="q1" value="3"> PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test</label>
                         </div>
 
                         <div class="question">
@@ -1106,7 +1178,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             resultsTitle.textContent = passed ? '🎉 Assessment Completed - PASSED!' : '📚 Assessment Completed - Review Required';
             
             const questionDetails = [
-                { q: 'Which command runs only development-tagged tests?', options: ['pnpm test', 'pnpm test:development', 'pnpm test --dev', 'pnpm test:quick'] },
+                { q: 'Which command runs only development-tagged tests?', options: ['npx playwright test tests/', 'pnpm test --grep=@development', 'pnpm test --dev', 'PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test'] },
                 { q: 'What is the correct way to create a domain helper class?', options: ['Extend TestCase', 'Implement GraphQL interface', 'Extend BaseNode', 'Create a simple class'] },
                 { q: 'Which tag should be used for tests with known intermittent failures?', options: ['@development', '@flaky', '@unstable', '@release'] },
                 { q: 'What should you always do with test data in @release tests?', options: ['Delete it after the test', 'Leave it for the next test', 'Store it in a global variable', 'Archive it in the database'] },

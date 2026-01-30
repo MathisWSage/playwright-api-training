@@ -62,30 +62,44 @@ cd services/api-test
 # Install dependencies
 pnpm install
 
-# Run all tests
-pnpm test
+# Build the project
+pnpm build
 
-# Quick mode (skips layer loading)
-pnpm test:quick
+# Type check
+pnpm typecheck
+
+# Run all tests
+npx playwright test tests/
 
 # Debug mode with detailed logs
-pnpm test:debug
+PLAYWRIGHT_SERVER_LOG=true pnpm test
+
+# Quick mode (skips layer loading)
+PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test
+
+# Run API tests with custom timeout
+PLAYWRIGHT_SERVER_TIMEOUT=300000 xtrem test --api
+
+# Run all tests on chromium
+pnpm test --project=chromium
 
 # Run only release-ready tests
-pnpm test:release
-
-# Run only development tests
-pnpm test:development
+pnpm test --grep=@release
 
 # Run only flaky tests
-pnpm test:flaky
+pnpm test --grep=@flaky
 
-# Run a specific module or test file
-pnpm test tests/master-data/
-pnpm test tests/master-data/customer.spec.ts
+# Run only development tests
+pnpm test --grep=@development
 
-# Watch mode (local development)
-pnpm test --watch
+# Run remote tests
+./scripts/test-remote.sh
+
+# Remote tests help
+./scripts/test-remote.sh --help
+
+# Run tests without server
+START_SERVER=false xtrem test --api
 ```
 
 If the app needs to be started manually (normally Playwright handles this via config):
@@ -204,9 +218,9 @@ Rules:
 Run examples:
 
 ```bash
-pnpm test:release
-pnpm test:development
-pnpm test:flaky
+pnpm test --grep=@release
+pnpm test --grep=@development
+pnpm test --grep=@flaky
 ```
 
 ### Test Isolation
@@ -316,29 +330,84 @@ Recommended patterns:
 # Ensure dependencies
 pnpm install
 
-# Start services if required
-pnpm start
+# Build the project
+pnpm build
 
-# Run tests
-pnpm test
+# Type check
+pnpm typecheck
 
-# With logging
+# Run all tests
+npx playwright test tests/
+
+# Debug mode with detailed logs
+PLAYWRIGHT_SERVER_LOG=true pnpm test
+
+# Quick mode (skips layer loading)
+PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test
+
+# Run API tests with custom timeout
+PLAYWRIGHT_SERVER_TIMEOUT=300000 xtrem test --api
+
+# Run all tests on chromium
+pnpm test --project=chromium
+
+# Run only release-ready tests
+pnpm test --grep=@release
+
+# Run only flaky tests
+pnpm test --grep=@flaky
+
+# Run only development tests
+pnpm test --grep=@development
+
+# Run remote tests
+./scripts/test-remote.sh
+
+# Remote tests help
+./scripts/test-remote.sh --help
+
+# Run tests without server
+START_SERVER=false xtrem test --api
+
+# With GraphQL logging
 PLAYWRIGHT_GRAPH_LOG=true pnpm test
 
 # Single file or directory
-pnpm test tests/master-data/customer.spec.ts
-pnpm test tests/master-data/
-
-# Tag-based
-pnpm test:development
-pnpm test:release
-pnpm test:flaky
+npx playwright test tests/master-data/customer.spec.ts
+npx playwright test tests/master-data/
 
 # Watch mode
-pnpm test --watch
+npx playwright test --watch
 ```
 
 ### CI/CD Integration
+
+The framework includes Azure DevOps pipeline templates for automated test execution:
+
+#### Pipeline Files
+
+- **template-run-api-playwright.yml**: Main pipeline template for running Playwright API tests
+  - Supports multiple cluster configurations
+  - Handles tenant provisioning and cleanup
+  - Configurable test scopes (@development, @release, @flaky)
+  - Parallel execution with configurable worker instances
+  - Automated authentication and environment setup
+
+- **template-jira-playwright.yml**: Pipeline integration for test result reporting
+  - Automatically downloads Playwright test results
+  - Parses JSON test reports
+  - Provides detailed test execution summary
+  
+#### Pipeline Configuration
+
+Key parameters for test execution:
+- `PLAYWRIGHT_GREP`: Filter tests by tag (default: '@development')
+- `XTREM_TEST_MAX_INSTANCES`: Maximum parallel test instances
+- `TENANT_PROVISIONING_METHOD`: Tenant creation strategy
+- `TARGET_URL`: Target environment URL
+- `authenticationType`: Authentication method for API calls
+
+#### CI Best Practices
 
 - Fully parallel execution (`fullyParallel: true`) for optimal distribution
 - Shard tests across agents with env vars or CLI flags
