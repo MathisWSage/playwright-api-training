@@ -999,6 +999,25 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
         let quizTotalQuestions = 0;
         let quizMinimumScore = 0;
         const quizQuestionsPerAttempt = 12;
+        const completionRegistrationEndpoint = 'https://default3e32dd7c41f6492da1a3c58eb02cf4.f8.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/33d8fe3125ba410483ea7638c4b61fe7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cgB3psnbRRTIT270lT_aBEWrxKFI5XOz8_IEj71Y36Q';
+
+        function isValidCompletionEndpoint(urlValue) {
+            if (!urlValue) {
+                return false;
+            }
+
+            const trimmedValue = urlValue.trim();
+            if (!trimmedValue || trimmedValue === 'PASTE_YOUR_POWER_AUTOMATE_HTTP_URL_HERE') {
+                return false;
+            }
+
+            try {
+                const parsed = new URL(trimmedValue);
+                return parsed.protocol === 'https:';
+            } catch {
+                return false;
+            }
+        }
 
         function shuffleArray(items) {
             const copy = [...items];
@@ -1219,11 +1238,11 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
 
                     <div class="info-box" style="margin-top: 20px;">
                         <h3 style="color: #667eea;">🎖️ Download Your Certificate</h3>
-                        <p>You passed the assessment, so you can download your personal diploma and badge.</p>
-                        <p style="font-size: 0.95em; color: #555;">Tip: fill in your name above first, so it appears on the files.</p>
+                        <p>You passed the assessment. Download becomes available after sending completion confirmation.</p>
+                        <p style="font-size: 0.95em; color: #555;">Tip: fill in your name above first, then send completion confirmation.</p>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
-                            <button onclick="downloadDiploma()" style="background: #28a745; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">⬇️ Download Diploma (SVG)</button>
-                            <button onclick="downloadBadge()" style="background: #17a2b8; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">🏅 Download Badge (SVG)</button>
+                            <button id="downloadDiplomaBtn" onclick="downloadDiploma()" ${emailSent ? '' : 'disabled'} style="background: #28a745; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: ${emailSent ? 'pointer' : 'not-allowed'}; font-size: 0.95em; opacity: ${emailSent ? '1' : '0.55'};">⬇️ Download Diploma (SVG)</button>
+                            <button id="downloadBadgeBtn" onclick="downloadBadge()" ${emailSent ? '' : 'disabled'} style="background: #17a2b8; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: ${emailSent ? 'pointer' : 'not-allowed'}; font-size: 0.95em; opacity: ${emailSent ? '1' : '0.55'};">🏅 Download Badge (SVG)</button>
                         </div>
                     </div>
                     
@@ -1334,6 +1353,11 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                 return;
             }
 
+            if (!emailSent) {
+                alert('Please send completion confirmation first to unlock diploma download.');
+                return;
+            }
+
             const userName = getCertificateUserName();
             if (!userName) {
                 return;
@@ -1379,6 +1403,11 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
         function downloadBadge() {
             if (!hasPassedAssessment()) {
                 alert('Badge is available only after passing the assessment.');
+                return;
+            }
+
+            if (!emailSent) {
+                alert('Please send completion confirmation first to unlock badge download.');
                 return;
             }
 
@@ -1428,18 +1457,27 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('name', userName);
-            formData.append('email', userEmail);
-            formData.append('score', quizScore);
-            formData.append('timestamp', new Date().toLocaleString());
+            if (!isValidCompletionEndpoint(completionRegistrationEndpoint)) {
+                alert('Completion endpoint is not configured correctly. Please set completionRegistrationEndpoint to the full HTTPS Power Automate trigger URL.');
+                return;
+            }
 
-            fetch('https://formspree.io/f/xrbnajyj', {
+            const payload = {
+                name: userName,
+                email: userEmail,
+                score: quizScore,
+                totalQuestions: quizTotalQuestions,
+                minimumScore: quizMinimumScore,
+                timestamp: new Date().toISOString()
+            };
+
+            fetch(completionRegistrationEndpoint, {
                 method: 'POST',
-                body: formData,
                 headers: {
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
             }).then(response => {
                 if (response.ok) {
                     alert('✅ Completion confirmation sent! Your trainer has been notified.');
@@ -1447,6 +1485,19 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     document.getElementById('userEmail').disabled = true;
                     document.querySelector('button[onclick="submitCompletionEmail()"]').disabled = true;
                     document.querySelector('button[onclick="submitCompletionEmail()"]').textContent = '✓ Sent';
+
+                    const diplomaBtn = document.getElementById('downloadDiplomaBtn');
+                    const badgeBtn = document.getElementById('downloadBadgeBtn');
+                    if (diplomaBtn) {
+                        diplomaBtn.disabled = false;
+                        diplomaBtn.style.opacity = '1';
+                        diplomaBtn.style.cursor = 'pointer';
+                    }
+                    if (badgeBtn) {
+                        badgeBtn.disabled = false;
+                        badgeBtn.style.opacity = '1';
+                        badgeBtn.style.cursor = 'pointer';
+                    }
                     
                     emailSent = true;
                     nextBtn.disabled = false;
