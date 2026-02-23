@@ -607,6 +607,15 @@ services/api-test/
                     <h2>✍️ Writing Your First Test</h2>
                     
                     <h3>Basic Test Structure</h3>
+                    <p>This example shows a complete CRUD flow for a Customer entity. The goal is to demonstrate the standard structure you should follow for most API tests in this framework.</p>
+                    <ul>
+                        <li><strong>Imports:</strong> Bring in Playwright assertions, the typed test fixture, and your domain helper class.</li>
+                        <li><strong>Test tag:</strong> <code>@development</code> controls where the test runs in pipelines.</li>
+                        <li><strong>Helper usage:</strong> <code>MasterData.Customer</code> centralizes GraphQL operations so tests stay readable.</li>
+                        <li><strong>Steps:</strong> Split the flow into create/update/delete for clean reporting and easier debugging.</li>
+                        <li><strong>Assertions:</strong> Validate critical outputs after each action, not only at the end.</li>
+                    </ul>
+
                     <div class="code-block"><span class="keyword">import</span> { expect } <span class="keyword">from</span> <span class="string">'@playwright/test'</span>;
 <span class="keyword">import</span> { test } <span class="keyword">from</span> <span class="string">'../../lib'</span>;
 <span class="keyword">import</span> { MasterData } <span class="keyword">from</span> <span class="string">'../../lib/master-data'</span>;
@@ -634,6 +643,10 @@ test.<span class="function">describe</span>(<span class="string">'Customer'</spa
     });
 });
 </div>
+
+                    <div class="info-box">
+                        <strong>💡 How to read this quickly:</strong> Start from the test title and tag, then follow each <code>test.step()</code> in order. If one step fails, the report tells you exactly which business action broke.
+                    </div>
 
                     <div class="warning-box">
                         <strong>⚠️ Remember:</strong> Always use test.step() for better organization and reporting. Tag your tests appropriately (@development, @release, @flaky).
