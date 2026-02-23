@@ -732,14 +732,23 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     <p>The testing framework includes Azure DevOps YAML pipeline templates for seamless CI/CD integration:</p>
                     
                     <div class="layer">
-                        <strong>template-run-api-playwright.yml</strong><br>
-                        Main pipeline for running Playwright API tests with full environment provisioning, parallel execution, and configurable test scopes.
+                        <strong>deveu-civ2-run-ft-xtrem-so-api_tests_playwright_civ2.yml</strong><br>
+                        Project pipeline orchestrating agent startup, Playwright execution, MySQL export, Teams notifications, and Jira ticket creation.
                     </div>
 
                     <div class="layer">
-                        <strong>template-jira-playwright.yml</strong><br>
-                        Test result reporting pipeline that downloads and parses Playwright test results for detailed execution summaries.
+                        <strong>run-api-playwright.yml + jira-playwright.yml</strong><br>
+                        Shared Huracan templates used for test execution and Jira integration.
                     </div>
+
+                    <h3>Stage Flow (Current Pipeline)</h3>
+                    <ul>
+                        <li><strong>StartAgent:</strong> starts AWS EC2 instance before tests run</li>
+                        <li><strong>Run_Playwright_Template:</strong> executes Playwright tests with tenant provisioning</li>
+                        <li><strong>WriteToMysql:</strong> exports results when enabled for manual/scheduled runs</li>
+                        <li><strong>NotifyStatus:</strong> sends Teams success/failure notifications</li>
+                        <li><strong>JiraTaskCreation:</strong> creates a Jira ticket when Playwright fails and ticketing is enabled</li>
+                    </ul>
 
                     <h3>Key Pipeline Features</h3>
                     <ul>
@@ -754,9 +763,12 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     <h3>Pipeline Configuration Parameters</h3>
                     <div class="code-block"><span class="comment"># Key parameters for pipeline execution</span>
 <span class="keyword">PLAYWRIGHT_GREP</span>: <span class="string">'@development'</span>      <span class="comment"># Filter tests by tag</span>
-<span class="keyword">XTREM_TEST_MAX_INSTANCES</span>: <span class="number">1</span>          <span class="comment"># Parallel worker count</span>
+<span class="keyword">XTREM_TEST_MAX_INSTANCES</span>: <span class="number">4</span>          <span class="comment"># Parallel worker count (default)</span>
 <span class="keyword">TARGET_URL</span>: <span class="string">'https://...'</span>           <span class="comment"># Target environment</span>
 <span class="keyword">TENANT_PROVISIONING_METHOD</span>: <span class="string">'static'</span> <span class="comment"># Tenant creation method</span>
+<span class="keyword">writeSQL</span>: <span class="string">'Yes|No'</span>                  <span class="comment"># Enable MySQL export stage</span>
+<span class="keyword">sendTeamsNotification</span>: <span class="string">'Yes|No'</span>     <span class="comment"># Enable Teams notification stage</span>
+<span class="keyword">createJiraTicket</span>: <span class="string">'Yes|No'</span>          <span class="comment"># Enable Jira ticket creation</span>
 </div>
 
                     <div class="info-box">
@@ -890,114 +902,18 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                         <button class="btn" onclick="showReadme()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
                             📖 Yes, Show Full README
                         </button>
-                        <button class="btn" onclick="changeSlide(1)">
+                        <button type="button" class="btn" onclick="skipToAssessment()">
                             ⏭️ Skip to Assessment
                         </button>
                     </div>
                 </div>
 
                 <!-- Slide 12: Assessment -->
-                <div class="slide" data-avatar="Time to test your knowledge! You need 75% (9 out of 12 questions) to pass. Take your time and good luck!">
+                <div id="assessment-slide" class="slide" data-avatar="Time to test your knowledge! You need 75% to pass. Take your time and good luck!">
                     <h2>📝 Knowledge Assessment</h2>
-                    <p style="font-size: 1.1em; color: #764ba2; margin-bottom: 20px;"><strong>Pass requirement: 75% (9 out of 12 correct answers)</strong></p>
+                    <p id="pass-requirement-text" style="font-size: 1.1em; color: #764ba2; margin-bottom: 20px;"><strong>Pass requirement: 75%</strong></p>
                     
-                    <div id="quiz-container">
-                        <div class="question">
-                            <p><strong>1. Which command runs only development-tagged tests?</strong></p>
-                            <label><input type="radio" name="q1" value="0"> npx playwright test tests/</label>
-                            <label><input type="radio" name="q1" value="1"> pnpm test --grep=@development</label>
-                            <label><input type="radio" name="q1" value="2"> pnpm test --dev</label>
-                            <label><input type="radio" name="q1" value="3"> PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>2. What is the correct way to create a domain helper class?</strong></p>
-                            <label><input type="radio" name="q2" value="0"> Extend TestCase</label>
-                            <label><input type="radio" name="q2" value="1"> Implement GraphQL interface</label>
-                            <label><input type="radio" name="q2" value="2"> Extend BaseNode</label>
-                            <label><input type="radio" name="q2" value="3"> Create a simple class</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>3. Which tag should be used for tests with known intermittent failures?</strong></p>
-                            <label><input type="radio" name="q3" value="0"> @development</label>
-                            <label><input type="radio" name="q3" value="1"> @flaky</label>
-                            <label><input type="radio" name="q3" value="2"> @unstable</label>
-                            <label><input type="radio" name="q3" value="3"> @release</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>4. What should you always do with test data in @release tests?</strong></p>
-                            <label><input type="radio" name="q4" value="0"> Delete it after the test</label>
-                            <label><input type="radio" name="q4" value="1"> Leave it for the next test</label>
-                            <label><input type="radio" name="q4" value="2"> Store it in a global variable</label>
-                            <label><input type="radio" name="q4" value="3"> Archive it in the database</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>5. Which environment variable enables GraphQL request/response logging?</strong></p>
-                            <label><input type="radio" name="q5" value="0"> DEBUG=true</label>
-                            <label><input type="radio" name="q5" value="1"> PLAYWRIGHT_LOG=true</label>
-                            <label><input type="radio" name="q5" value="2"> GRAPH_DEBUG=true</label>
-                            <label><input type="radio" name="q5" value="3"> PLAYWRIGHT_GRAPH_LOG=true</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>6. What is the main benefit of using test.step()?</strong></p>
-                            <label><input type="radio" name="q6" value="0"> Faster test execution</label>
-                            <label><input type="radio" name="q6" value="1"> Better reporting and debugging</label>
-                            <label><input type="radio" name="q6" value="2"> Automatic data cleanup</label>
-                            <label><input type="radio" name="q6" value="3"> Parallel execution</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>7. How many layers does the framework architecture have?</strong></p>
-                            <label><input type="radio" name="q7" value="0"> 2</label>
-                            <label><input type="radio" name="q7" value="1"> 3</label>
-                            <label><input type="radio" name="q7" value="2"> 4</label>
-                            <label><input type="radio" name="q7" value="3"> 5</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>8. Which fixture provides read-only GraphQL queries?</strong></p>
-                            <label><input type="radio" name="q8" value="0"> graph</label>
-                            <label><input type="radio" name="q8" value="1"> graphMutation</label>
-                            <label><input type="radio" name="q8" value="2"> graphQuery</label>
-                            <label><input type="radio" name="q8" value="3"> graphRead</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>9. Tests should be:</strong></p>
-                            <label><input type="radio" name="q9" value="0"> Dependent on execution order</label>
-                            <label><input type="radio" name="q9" value="1"> Completely independent</label>
-                            <label><input type="radio" name="q9" value="2"> Share global state</label>
-                            <label><input type="radio" name="q9" value="3"> Run sequentially only</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>10. Where should test files be organized?</strong></p>
-                            <label><input type="radio" name="q10" value="0"> All in one directory</label>
-                            <label><input type="radio" name="q10" value="1"> By test type</label>
-                            <label><input type="radio" name="q10" value="2"> By domain (master-data, sales, system)</label>
-                            <label><input type="radio" name="q10" value="3"> By developer name</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>11. Which method in BaseNode creates a new entity with random data?</strong></p>
-                            <label><input type="radio" name="q11" value="0"> create()</label>
-                            <label><input type="radio" name="q11" value="1"> insert()</label>
-                            <label><input type="radio" name="q11" value="2"> add()</label>
-                            <label><input type="radio" name="q11" value="3"> new()</label>
-                        </div>
-
-                        <div class="question">
-                            <p><strong>12. What does PLAYWRIGHT_SKIP_LAYER_LOAD=true do?</strong></p>
-                            <label><input type="radio" name="q12" value="0"> Skips all tests</label>
-                            <label><input type="radio" name="q12" value="1"> Skips loading test data layer for faster execution</label>
-                            <label><input type="radio" name="q12" value="2"> Disables test reporting</label>
-                            <label><input type="radio" name="q12" value="3"> Runs tests in debug mode</label>
-                        </div>
-                    </div>
+                    <div id="quiz-container"></div>
 
                     <button class="btn" onclick="submitQuiz()" style="margin-top: 30px; width: 100%;">Submit Assessment</button>
                     
@@ -1023,33 +939,109 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
     </div>
 
     <script>
-        const correctAnswers = {
-            q1: 1,
-            q2: 2,
-            q3: 1,
-            q4: 0,
-            q5: 3,
-            q6: 1,
-            q7: 2,
-            q8: 0,
-            q9: 1,
-            q10: 2,
-            q11: 0,
-            q12: 1
-        };
+        const quizQuestionBank = [
+            { q: 'Which command runs only development-tagged tests?', options: ['pnpm test --grep=@development', 'npx playwright test tests/', 'pnpm test --dev', 'PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test'], correct: 0 },
+            { q: 'What is the correct way to create a domain helper class?', options: ['Extend BaseNode', 'Extend TestCase', 'Implement GraphQL interface', 'Create a simple class'], correct: 0 },
+            { q: 'Which tag should be used for tests with known intermittent failures?', options: ['@flaky', '@development', '@unstable', '@release'], correct: 0 },
+            { q: 'What should you always do with test data in @release tests?', options: ['Delete it after the test', 'Leave it for the next test', 'Store it in a global variable', 'Archive it in the database'], correct: 0 },
+            { q: 'Which environment variable enables GraphQL request/response logging?', options: ['PLAYWRIGHT_GRAPH_LOG=true', 'DEBUG=true', 'PLAYWRIGHT_LOG=true', 'GRAPH_DEBUG=true'], correct: 0 },
+            { q: 'What is the main benefit of using test.step()?', options: ['Better reporting and debugging', 'Faster test execution', 'Automatic data cleanup', 'Parallel execution'], correct: 0 },
+            { q: 'How many framework layers are highlighted in the training architecture?', options: ['4', '2', '3', '5'], correct: 0 },
+            { q: 'Which fixture provides read-only GraphQL queries?', options: ['graph', 'graphMutation', 'graphQuery', 'graphRead'], correct: 0 },
+            { q: 'Tests should be:', options: ['Completely independent', 'Dependent on execution order', 'Share global state', 'Run sequentially only'], correct: 0 },
+            { q: 'Where should test files be organized?', options: ['By domain (master-data, sales, system)', 'All in one directory', 'By test type', 'By developer name'], correct: 0 },
+            { q: 'Which method in BaseNode creates a new entity with random data?', options: ['create()', 'insert()', 'add()', 'new()'], correct: 0 },
+            { q: 'What does PLAYWRIGHT_SKIP_LAYER_LOAD=true do?', options: ['Skips loading test data layer for faster execution', 'Skips all tests', 'Disables test reporting', 'Runs tests in debug mode'], correct: 0 },
+            { q: 'Which command runs type checking in this training?', options: ['pnpm typecheck', 'pnpm lint', 'npx tsc --watch', 'pnpm check-types'], correct: 0 },
+            { q: 'Which script is used for remote tests?', options: ['./scripts/test-remote.sh', './scripts/run-remote-api.sh', 'npx playwright remote', 'pnpm remote:test'], correct: 0 },
+            { q: 'Which parameter is used to filter tests by tags in pipeline runs?', options: ['PLAYWRIGHT_GREP', 'PLAYWRIGHT_FILTER', 'TEST_TAG', 'PLAYWRIGHT_SCOPE'], correct: 0 },
+            { q: 'What is the default value for XTREM_TEST_MAX_INSTANCES in the documented pipeline?', options: ['4', '1', '2', '8'], correct: 0 },
+            { q: 'Which stage starts the AWS EC2 instance before running tests?', options: ['StartAgent', 'Run_Playwright_Template', 'NotifyStatus', 'WriteToMysql'], correct: 0 },
+            { q: 'Which stage writes test results to MySQL when enabled?', options: ['WriteToMysql', 'NotifyStatus', 'StartAgent', 'JiraTaskCreation'], correct: 0 },
+            { q: 'When is Jira ticket creation triggered in this pipeline?', options: ['When Playwright fails and Jira is enabled on manual/scheduled runs', 'After every run', 'Only when tests pass', 'Only for pull requests'], correct: 0 },
+            { q: 'What is the default tenant provisioning method in the pipeline parameters?', options: ['static', 'dynamic', 'skipped', 'manual'], correct: 0 },
+            { q: 'What does START_SERVER=false xtrem test --api do?', options: ['Runs API tests without starting the server', 'Skips API tests', 'Forces browser tests only', 'Runs only smoke tests'], correct: 0 },
+            { q: 'Which value enables detailed web server debug output?', options: ['DEBUG=pw:webserver', 'PLAYWRIGHT_SERVER_LOG=true', 'DEBUG=playwright:server', 'PWDEBUG=1'], correct: 0 },
+            { q: 'What is the weekday schedule shown for the nightly pipeline?', options: ['0 6 * * 1-5', '0 0 * * *', '30 6 * * 1-5', '0 6 * * 0'], correct: 0 },
+            { q: 'Which stage is responsible for Teams success/failure notifications?', options: ['NotifyStatus', 'WriteToMysql', 'Run_Playwright_Template', 'StartAgent'], correct: 0 }
+        ];
 
         let currentSlide = 0;
         const slides = document.querySelectorAll('.slide');
         const totalSlides = slides.length;
+        const assessmentSlide = document.getElementById('assessment-slide');
+        const assessmentSlideIndex = Array.from(slides).indexOf(assessmentSlide);
         const avatarText = document.getElementById('avatar-text');
         const progressFill = document.getElementById('progressFill');
         const slideCounter = document.getElementById('slideCounter');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const quizContainer = document.getElementById('quiz-container');
+        const passRequirementText = document.getElementById('pass-requirement-text');
 
         let quizSubmitted = false;
         let quizScore = 0;
         let emailSent = false;
+        let renderedQuizQuestions = [];
+        let quizTotalQuestions = 0;
+        let quizMinimumScore = 0;
+        const quizQuestionsPerAttempt = 12;
+
+        function shuffleArray(items) {
+            const copy = [...items];
+            for (let index = copy.length - 1; index > 0; index--) {
+                const swapIndex = Math.floor(Math.random() * (index + 1));
+                [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+            }
+            return copy;
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderQuizQuestions() {
+            const selectedQuestions = shuffleArray(quizQuestionBank).slice(0, Math.min(quizQuestionsPerAttempt, quizQuestionBank.length));
+
+            renderedQuizQuestions = selectedQuestions.map((question) => {
+                const optionEntries = question.options.map((option, index) => ({
+                    option,
+                    isCorrect: index === question.correct
+                }));
+                const shuffledOptions = shuffleArray(optionEntries);
+
+                return {
+                    q: question.q,
+                    options: shuffledOptions.map(entry => entry.option),
+                    correct: shuffledOptions.findIndex(entry => entry.isCorrect)
+                };
+            });
+
+            quizTotalQuestions = renderedQuizQuestions.length;
+            quizMinimumScore = Math.ceil(quizTotalQuestions * 0.75);
+            passRequirementText.innerHTML = `<strong>Pass requirement: 75% (${quizMinimumScore} out of ${quizTotalQuestions} correct answers)</strong>`;
+
+            const quizMarkup = renderedQuizQuestions.map((question, questionIndex) => {
+                const questionNumber = questionIndex + 1;
+                const optionMarkup = question.options.map((optionText, optionIndex) => {
+                    return `<label><input type="radio" name="q${questionNumber}" value="${optionIndex}"> ${escapeHtml(optionText)}</label>`;
+                }).join('');
+
+                return `
+                    <div class="question">
+                        <p><strong>${questionNumber}. ${escapeHtml(question.q)}</strong></p>
+                        ${optionMarkup}
+                    </div>
+                `;
+            }).join('');
+
+            quizContainer.innerHTML = quizMarkup;
+        }
 
         function showReadme() {
             window.open('https://github.com/MathisWSage/playwright-api-training/blob/main/README.md', '_blank');
@@ -1061,6 +1053,15 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             } else {
                 window.close();
             }
+        }
+
+        function skipToAssessment() {
+            if (assessmentSlideIndex === -1) {
+                return;
+            }
+
+            currentSlide = assessmentSlideIndex;
+            updateSlide();
         }
 
         function updateSlide() {
@@ -1078,7 +1079,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             
             prevBtn.disabled = currentSlide === 0;
             
-            if (currentSlide === 12 && !quizSubmitted) {
+            if (currentSlide === assessmentSlideIndex && !quizSubmitted) {
                 nextBtn.disabled = true;
                 nextBtn.textContent = 'Complete Quiz First';
                 nextBtn.onclick = () => changeSlide(1);
@@ -1102,7 +1103,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
         }
 
         function changeSlide(direction) {
-            if (currentSlide === 12 && !quizSubmitted && direction > 0) {
+            if (currentSlide === assessmentSlideIndex && !quizSubmitted && direction > 0) {
                 return;
             }
             
@@ -1113,18 +1114,20 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
         }
 
         function submitQuiz() {
-            const questions = document.querySelectorAll('.question');
+            const questions = document.querySelectorAll('#quiz-container .question');
             let correct = 0;
             const totalQuestions = questions.length;
             const userAnswers = [];
 
             questions.forEach((question, index) => {
                 const questionNum = `q${index + 1}`;
-                const correctAnswer = correctAnswers[questionNum];
+                const correctAnswer = renderedQuizQuestions[index].correct;
                 const selectedInput = question.querySelector(`input[name="${questionNum}"]:checked`);
                 
+                question.classList.remove('correct', 'incorrect');
+
                 if (!selectedInput) {
-                    userAnswers.push({ correct: false, answered: false });
+                    userAnswers.push({ correct: false, answered: false, userAnswer: null, correctAnswer });
                     question.classList.add('incorrect');
                     return;
                 }
@@ -1158,7 +1161,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             resultDiv.innerHTML = `
                 <h3>${passed ? '🎉 Congratulations!' : '📚 Keep Learning'}</h3>
                 <p>You scored ${correct} out of ${totalQuestions} (${percentage}%)</p>
-                <p>${passed ? 'You passed! Click Next to see your detailed results.' : 'You need 75% to pass. Review the material and try again.'}</p>
+                <p>${passed ? 'You passed! Click Next to see your detailed results.' : `You need 75% to pass (${quizMinimumScore}/${totalQuestions}). Review the material and try again.`}</p>
             `;
 
             populateResultsPage(correct, totalQuestions, percentage, passed, userAnswers);
@@ -1176,21 +1179,6 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             const resultsTitle = document.getElementById('results-title');
             
             resultsTitle.textContent = passed ? '🎉 Assessment Completed - PASSED!' : '📚 Assessment Completed - Review Required';
-            
-            const questionDetails = [
-                { q: 'Which command runs only development-tagged tests?', options: ['npx playwright test tests/', 'pnpm test --grep=@development', 'pnpm test --dev', 'PLAYWRIGHT_SKIP_LAYER_LOAD=true pnpm test'] },
-                { q: 'What is the correct way to create a domain helper class?', options: ['Extend TestCase', 'Implement GraphQL interface', 'Extend BaseNode', 'Create a simple class'] },
-                { q: 'Which tag should be used for tests with known intermittent failures?', options: ['@development', '@flaky', '@unstable', '@release'] },
-                { q: 'What should you always do with test data in @release tests?', options: ['Delete it after the test', 'Leave it for the next test', 'Store it in a global variable', 'Archive it in the database'] },
-                { q: 'Which environment variable enables GraphQL request/response logging?', options: ['DEBUG=true', 'PLAYWRIGHT_LOG=true', 'GRAPH_DEBUG=true', 'PLAYWRIGHT_GRAPH_LOG=true'] },
-                { q: 'What is the main benefit of using test.step()?', options: ['Faster test execution', 'Better reporting and debugging', 'Automatic data cleanup', 'Parallel execution'] },
-                { q: 'How many layers does the framework architecture have?', options: ['2', '3', '4', '5'] },
-                { q: 'Which fixture provides read-only GraphQL queries?', options: ['graph', 'graphMutation', 'graphQuery', 'graphRead'] },
-                { q: 'Tests should be:', options: ['Dependent on execution order', 'Completely independent', 'Share global state', 'Run sequentially only'] },
-                { q: 'Where should test files be organized?', options: ['All in one directory', 'By test type', 'By domain (master-data, sales, system)', 'By developer name'] },
-                { q: 'Which method in BaseNode creates a new entity with random data?', options: ['create()', 'insert()', 'add()', 'new()'] },
-                { q: 'What does PLAYWRIGHT_SKIP_LAYER_LOAD=true do?', options: ['Skips all tests', 'Skips loading test data layer for faster execution', 'Disables test reporting', 'Runs tests in debug mode'] }
-            ];
 
             let html = `
                 <div class="result-box ${passed ? 'pass' : 'fail'}">
@@ -1198,25 +1186,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     <p>Score: ${correct}/${total} (${percentage}%)</p>
                     <p>${passed ? 'You have successfully completed the training!' : 'Please review the material and retake the assessment.'}</p>
                 </div>
-                
-                <h3 style="margin-top: 30px; color: #667eea;">Question Review</h3>
             `;
-
-            userAnswers.forEach((answer, index) => {
-                const detail = questionDetails[index];
-                const itemClass = answer.correct ? 'correct-answer' : 'wrong-answer';
-                const icon = answer.correct ? '✅' : '❌';
-                
-                html += `
-                    <div class="review-item ${itemClass}">
-                        <p><strong>${icon} Question ${index + 1}:</strong> ${detail.q}</p>
-                        ${answer.answered ? `
-                            <p><strong>Your answer:</strong> ${detail.options[answer.userAnswer]}</p>
-                            ${!answer.correct ? `<p><strong>Correct answer:</strong> ${detail.options[answer.correctAnswer]}</p>` : ''}
-                        ` : '<p><strong>Not answered</strong></p>'}
-                    </div>
-                `;
-            });
 
             if (passed) {
                 html += `
@@ -1232,6 +1202,16 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                             <input type="email" id="userEmail" placeholder="Enter your email address" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
                         </div>
                         <button onclick="submitCompletionEmail()" style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 1em; margin-top: 10px;">Send Completion Confirmation</button>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 20px;">
+                        <h3 style="color: #667eea;">🎖️ Download Your Certificate</h3>
+                        <p>You passed the assessment, so you can download your personal diploma and badge.</p>
+                        <p style="font-size: 0.95em; color: #555;">Tip: fill in your name above first, so it appears on the files.</p>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
+                            <button onclick="downloadDiploma()" style="background: #28a745; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">⬇️ Download Diploma (SVG)</button>
+                            <button onclick="downloadBadge()" style="background: #17a2b8; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-size: 0.95em;">🏅 Download Badge (SVG)</button>
+                        </div>
                     </div>
                     
                     <div class="info-box" style="margin-top: 30px;">
@@ -1263,7 +1243,156 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                 `;
             }
 
+            html += `<h3 style="margin-top: 30px; color: #667eea;">Question Review</h3>`;
+
+            userAnswers.forEach((answer, index) => {
+                const detail = renderedQuizQuestions[index];
+                const itemClass = answer.correct ? 'correct-answer' : 'wrong-answer';
+                const icon = answer.correct ? '✅' : '❌';
+                
+                html += `
+                    <div class="review-item ${itemClass}">
+                        <p><strong>${icon} Question ${index + 1}:</strong> ${detail.q}</p>
+                        ${answer.answered ? `
+                            <p><strong>Your answer:</strong> ${detail.options[answer.userAnswer]}</p>
+                            ${!answer.correct ? `<p><strong>Correct answer:</strong> ${detail.options[answer.correctAnswer]}</p>` : ''}
+                        ` : `<p><strong>Not answered</strong></p><p><strong>Correct answer:</strong> ${detail.options[answer.correctAnswer]}</p>`}
+                    </div>
+                `;
+            });
+
             resultsContent.innerHTML = html;
+        }
+
+        function escapeXml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        }
+
+        function downloadTextFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function getCertificateUserName() {
+            const userNameInput = document.getElementById('userName');
+            const currentName = userNameInput ? userNameInput.value.trim() : '';
+
+            if (currentName) {
+                return currentName;
+            }
+
+            const enteredName = prompt('Enter your full name for the diploma/badge:');
+            if (!enteredName || !enteredName.trim()) {
+                alert('Name is required to generate the diploma or badge.');
+                return null;
+            }
+
+            const cleanedName = enteredName.trim();
+            if (userNameInput) {
+                userNameInput.value = cleanedName;
+            }
+            return cleanedName;
+        }
+
+        function createSafeFileNamePart(value) {
+            const safe = value.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '');
+            return safe || 'participant';
+        }
+
+        function hasPassedAssessment() {
+            return quizSubmitted && quizScore >= quizMinimumScore;
+        }
+
+        function downloadDiploma() {
+            if (!hasPassedAssessment()) {
+                alert('Diploma is available only after passing the assessment.');
+                return;
+            }
+
+            const userName = getCertificateUserName();
+            if (!userName) {
+                return;
+            }
+
+            const issueDate = new Date().toLocaleDateString();
+            const safeName = createSafeFileNamePart(userName);
+            const escapedName = escapeXml(userName);
+
+            const diplomaSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fbff"/>
+      <stop offset="100%" stop-color="#e9f5ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="1000" fill="url(#bg)"/>
+  <rect x="40" y="40" width="1320" height="920" fill="none" stroke="#00AA44" stroke-width="8" rx="20"/>
+  <rect x="70" y="70" width="1260" height="860" fill="none" stroke="#00AA44" stroke-width="2" rx="14"/>
+
+  <text x="700" y="190" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="58" fill="#00AA44" font-weight="700">Certificate of Achievement</text>
+  <text x="700" y="255" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#2f3a45">Playwright API Testing Training</text>
+
+  <text x="700" y="370" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#2f3a45">This certifies that</text>
+  <text x="700" y="455" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="64" fill="#0b2538" font-weight="700">${escapedName}</text>
+  <line x1="330" y1="480" x2="1070" y2="480" stroke="#9bb7c8" stroke-width="2"/>
+
+  <text x="700" y="560" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#2f3a45">successfully passed the final assessment</text>
+    <text x="700" y="610" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#2f3a45">Score: ${quizScore}/${quizTotalQuestions} (minimum required: ${quizMinimumScore}/${quizTotalQuestions})</text>
+
+  <text x="220" y="820" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#2f3a45">Date: ${escapeXml(issueDate)}</text>
+  <text x="700" y="890" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#2f3a45">Sage - Playwright API Testing Training</text>
+
+  <circle cx="1180" cy="805" r="70" fill="#00AA44" opacity="0.18"/>
+  <circle cx="1180" cy="805" r="50" fill="none" stroke="#00AA44" stroke-width="5"/>
+  <text x="1180" y="815" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="26" fill="#00AA44" font-weight="700">PASS</text>
+</svg>`.trim();
+
+            downloadTextFile(diplomaSvg, `playwright_api_diploma_${safeName}.svg`, 'image/svg+xml');
+        }
+
+        function downloadBadge() {
+            if (!hasPassedAssessment()) {
+                alert('Badge is available only after passing the assessment.');
+                return;
+            }
+
+            const userName = getCertificateUserName();
+            if (!userName) {
+                return;
+            }
+
+            const safeName = createSafeFileNamePart(userName);
+            const escapedName = escapeXml(userName);
+
+            const badgeSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+  <rect width="900" height="900" fill="#f7fbf8"/>
+  <circle cx="450" cy="360" r="250" fill="#00AA44"/>
+  <circle cx="450" cy="360" r="210" fill="#ffffff"/>
+  <circle cx="450" cy="360" r="175" fill="#00AA44" opacity="0.12"/>
+
+  <text x="450" y="305" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="44" font-weight="700" fill="#006d2a">Playwright API</text>
+  <text x="450" y="360" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="56" font-weight="700" fill="#006d2a">CERTIFIED</text>
+  <text x="450" y="418" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="30" fill="#006d2a">${escapedName}</text>
+
+  <path d="M330 560 L390 760 L450 700 L510 760 L570 560" fill="#00AA44" opacity="0.85"/>
+    <text x="450" y="830" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" fill="#2f3a45">Assessment Passed (${quizScore}/${quizTotalQuestions})</text>
+</svg>`.trim();
+
+            downloadTextFile(badgeSvg, `playwright_api_badge_${safeName}.svg`, 'image/svg+xml');
         }
 
         function submitCompletionEmail() {
@@ -1324,6 +1453,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             if (e.key === 'ArrowRight') changeSlide(1);
         });
 
+        renderQuizQuestions();
         updateSlide();
     </script>
 </body>

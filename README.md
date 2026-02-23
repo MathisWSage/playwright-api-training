@@ -384,16 +384,34 @@ npx playwright test --watch
 
 The framework includes Azure DevOps pipeline templates for automated test execution:
 
+#### Current API Pipeline (project-specific)
+
+The current scheduled API pipeline is:
+- `deveu-civ2-run-ft-xtrem-so-api_tests_playwright_civ2.yml`
+
+Execution flow:
+- **StartAgent**: starts the dedicated AWS EC2 instance (`i-03fb922f1fa8c84fe`) on `windows-2022`
+- **Run_Playwright_Template**: runs the Huracan Playwright template (`run-api-playwright.yml`) on `x3-ubuntu`
+- **WriteToMysql**: writes JSON results to MySQL only when `writeSQL=Yes` and trigger is `Manual` or `Schedule`
+- **NotifyStatus**: sends Teams notification (`sendTeamsNotification=Yes`) with split success/failure messages
+- **JiraTaskCreation**: creates Jira ticket only when Playwright stage failed, `createJiraTicket=Yes`, and trigger is `Manual` or `Schedule`
+
+Schedule and defaults:
+- Weekday schedule: `0 6 * * 1-5` (Nightly SO API Run)
+- Default grep/tag filter: `PLAYWRIGHT_GREP='@development'`
+- Default parallelism: `XTREM_TEST_MAX_INSTANCES=4`
+- Tenant provisioning default: `TENANT_PROVISIONING_METHOD='static'`
+
 #### Pipeline Files
 
-- **template-run-api-playwright.yml**: Main pipeline template for running Playwright API tests
+- **run-api-playwright.yml**: Main pipeline template for running Playwright API tests
   - Supports multiple cluster configurations
   - Handles tenant provisioning and cleanup
   - Configurable test scopes (@development, @release, @flaky)
   - Parallel execution with configurable worker instances
   - Automated authentication and environment setup
 
-- **template-jira-playwright.yml**: Pipeline integration for test result reporting
+- **jira-playwright.yml**: Pipeline integration for test result reporting
   - Automatically downloads Playwright test results
   - Parses JSON test reports
   - Provides detailed test execution summary
