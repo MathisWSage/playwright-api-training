@@ -516,18 +516,22 @@
                     
                     <h3>Project Structure Overview</h3>
                     <div class="architecture-diagram">
-services/api-test/
-├── lib/                    # Shared utilities
-│   ├── index.ts           # Typed fixtures
-│   ├── functions/         # Helper functions
-│   ├── master-data/       # Domain helpers
-│   ├── sales/            # Sales helpers
-│   └── system/           # System helpers
-├── tests/                 # Test files by domain
-│   ├── master-data/
-│   ├── sales/
-│   └── system/
-└── playwright.config.ts   # Configuration
+services/api-test
+├── docs/                          # Documentation and onboarding guides
+├── lib/                           # Shared typed test API, helpers, utilities
+│   ├── index.ts                   # Composite GraphApi type + exported Playwright test fixture
+│   ├── functions/                 # Generic cross-domain helper functions
+│   ├── reporters/                 # Custom Playwright reporters
+│   ├── test-utils/                # Test-specific reusable helpers
+│   ├── types/                     # Shared TypeScript types
+│   ├── [domain]/                  # Domain helper classes (CRUD/query flows)
+│   │   └── index.ts               # Domain exports
+├── tests/                         # Executable spec files grouped by domain
+│   ├── global.setup.ts            # Pre-test checks/bootstrap (setup project)
+│   ├── global.teardown.ts         # Post-test cleanup (cleanup project)
+│   ├── [domain]/
+│   │   └── *.spec.ts              # Domain test suites
+└── playwright.config.ts           # Project dependency orchestration and runtime config
                     </div>
 
                     <h3>Four Key Layers</h3>
