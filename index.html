@@ -1013,6 +1013,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
         let quizSubmitted = false;
         let quizScore = 0;
         let emailSent = false;
+        let completionSubmissionInProgress = false;
         let renderedQuizQuestions = [];
         let quizTotalQuestions = 0;
         let quizMinimumScore = 0;
@@ -1137,10 +1138,14 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                 nextBtn.disabled = true;
                 nextBtn.textContent = 'Complete Quiz First';
                 nextBtn.onclick = () => changeSlide(1);
+            } else if (currentSlide === assessmentSlideIndex && hasPassedAssessment() && (!emailSent || completionSubmissionInProgress)) {
+                nextBtn.disabled = true;
+                nextBtn.textContent = 'Next →';
+                nextBtn.onclick = () => changeSlide(1);
             } else if (currentSlide === totalSlides - 1) {
-                nextBtn.disabled = !emailSent;
-                nextBtn.textContent = emailSent ? 'Completed ✓' : 'Complete Registration to Continue';
-                nextBtn.onclick = emailSent ? () => closeTab() : null;
+                nextBtn.disabled = true;
+                nextBtn.textContent = 'Next →';
+                nextBtn.onclick = null;
             } else {
                 nextBtn.disabled = false;
                 nextBtn.textContent = 'Next →';
@@ -1259,7 +1264,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
             populateResultsPage(correct, totalQuestions, percentage, passed, userAnswers);
 
             if (passed) {
-                nextBtn.disabled = false;
+                nextBtn.disabled = true;
                 nextBtn.textContent = 'Next →';
                 submitCompletionEmail(participantName, participantEmail, true);
             }
@@ -1547,6 +1552,8 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
 
             participantName = cleanedName;
             participantEmail = cleanedEmail;
+            completionSubmissionInProgress = true;
+            updateSlide();
             updateCompletionStatus('Submitting your completion status...', false);
 
             const payload = {
@@ -1570,7 +1577,7 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     if (!silentOnSuccess) {
                         alert('✅ Completion confirmation sent! Your trainer has been notified.');
                     }
-                    updateCompletionStatus('✅ Completion saved successfully. You can now close this training window.', false);
+                    updateCompletionStatus('✅ Completion saved successfully. You can now continue to the final slide.', false);
 
                     const diplomaBtn = document.getElementById('downloadDiplomaBtn');
                     const badgeBtn = document.getElementById('downloadBadgeBtn');
@@ -1586,15 +1593,18 @@ test(<span class="string">'@release Core API validation'</span>, <span class="ke
                     }
                     
                     emailSent = true;
-                    nextBtn.disabled = false;
-                    nextBtn.textContent = 'Completed ✓';
-                    nextBtn.onclick = closeTab;
+                    completionSubmissionInProgress = false;
+                    updateSlide();
                 } else {
+                    completionSubmissionInProgress = false;
+                    updateSlide();
                     updateCompletionStatus('⚠️ We could not save your completion. Please retry submission.', true);
                     alert('There was an issue sending the confirmation. Please contact your trainer directly.');
                 }
             }).catch(error => {
                 console.error('Error:', error);
+                completionSubmissionInProgress = false;
+                updateSlide();
                 updateCompletionStatus('⚠️ We could not save your completion. Please retry submission.', true);
                 alert('There was an issue sending the confirmation. Please contact your trainer directly.');
             });
